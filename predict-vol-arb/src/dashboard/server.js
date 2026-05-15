@@ -179,6 +179,39 @@ app.get('/api/vault', async (req, res) => {
   }
 });
 
+// Wallet lookup: get PredictManager(s) for a Sui address + summary.
+let positionsCache = new Map();
+app.get('/api/positions/:owner', async (req, res) => {
+  try {
+    const owner = req.params.owner;
+    if (!owner.startsWith('0x') || owner.length < 40) throw new Error('invalid sui address');
+    const cached = positionsCache.get(owner);
+    if (cached && Date.now() - cached.ts < 30_000) return res.json({ ...cached.data, cache: 'hit' });
+    if (!PKG) throw new Error('PREDICT_PKG not set');
+
+    const evs = await sui.queryEvents({
+      query: { MoveEventType: `${PKG}::predict_manager::PredictManagerCreated` },
+      limit: 200, order: 'descending',
+    });
+    const managers = evs.data
+      .filter((e) => String(e.parsedJson?.owner) === owner)
+      .map((e) => ({ id: e.parsedJson?.manager_id, createdMs: Number(e.timestampMs), tx: e.id?.txDigest }));
+
+    const enriched = await Promise.all(managers.slice(0, 10).map(async (m) => {
+      try {
+        const o = await sui.getObject({ id: m.id, options: { showContent: true } });
+        const f = o.data?.content?.fields ?? {};
+        const bm = f.balance_manager?.fields ?? {};
+        return { ...m, owner: f.owner, balance_manager_id: bm.id?.id ?? null };
+      } catch { return m; }
+    }));
+
+    const out = { ts: Date.now(), owner, managerCount: managers.length, managers: enriched };
+    positionsCache.set(owner, { ts: Date.now(), data: out });
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
 // Per-oracle drill-down: recent SVI history + price history + settlement state.
 app.get('/api/oracle/:id', async (req, res) => {
   try {

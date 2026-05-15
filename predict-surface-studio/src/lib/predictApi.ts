@@ -126,6 +126,19 @@ export async function fetchBacktest(): Promise<BacktestResult | null> {
   } catch { return null; }
 }
 
+export interface PositionsLookup {
+  owner: string;
+  managerCount: number;
+  managers: { id: string; createdMs: number; tx?: string; owner?: string; balance_manager_id?: string }[];
+}
+export async function fetchPositions(owner: string): Promise<PositionsLookup | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/positions/${owner}`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
 export interface OracleDrill {
   oracleId: string;
   expiry_ms: number;

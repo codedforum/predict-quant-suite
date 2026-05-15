@@ -19,6 +19,9 @@ import OracleDrilldown from './components/OracleDrilldown';
 import LeaderboardCard from './components/LeaderboardCard';
 import StrikeGrid from './components/StrikeGrid';
 import BacktestChart from './components/BacktestChart';
+import WalletLookupCard from './components/WalletLookupCard';
+import CompareOraclesPanel from './components/CompareOraclesPanel';
+import ScrollSpy from './components/ScrollSpy';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -181,27 +184,25 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
 
   if (tab === 'smile') {
     return (
-      <div className="tab-panel two-col">
+      <div className="tab-panel">
         <section className="card glow tall" style={{ minHeight: 480 }}>
           <div className="card-head"><h2>Smile Overlay</h2><span className="meta">all live oracles</span></div>
           <div className="card-body card-body-flex" style={{ minHeight: 420 }}>
             {oracles.length ? <MultiSmilePlot oracles={oracles} selectedIdx={idx} /> : skel}
           </div>
         </section>
-        <aside className="side">
-          <div className="card">
-            <div className="card-head"><h2>Pick Oracle</h2></div>
+        <div className="two-col">
+          <section className="card">
+            <div className="card-head"><h2>Compare A vs B</h2><span className="meta">side-by-side params</span></div>
+            {oracles.length ? <CompareOraclesPanel oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : skel}
+          </section>
+          <section className="card">
+            <div className="card-head"><h2>Pick oracle</h2></div>
             <div className="card-body" style={{ padding: 0 }}>
               {oracles.length ? <OracleList oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : skel}
             </div>
-          </div>
-          <div className="card">
-            <div className="card-head"><h2>Selected Smile</h2><span className="meta">IV vs k</span></div>
-            <div className="card-body" style={{ minHeight: 200, padding: 0 }}>
-              {current ? <SmilePlot snapshot={current} /> : skel}
-            </div>
-          </div>
-        </aside>
+          </section>
+        </div>
       </div>
     );
   }
@@ -220,44 +221,54 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
   }
 
   if (tab === 'volarb') {
+    const sections = [
+      { id: 'sec-stats', label: '24h stats' },
+      { id: 'sec-spread', label: 'Spread' },
+      { id: 'sec-backtest', label: 'Backtest' },
+      { id: 'sec-opps', label: 'Opportunities' },
+      { id: 'sec-vault', label: 'Vault' },
+      { id: 'sec-wallet', label: 'Wallet lookup' },
+      { id: 'sec-tg', label: 'Telegram' },
+    ];
     return (
-      <div className="tab-panel">
-        <section className="card">
-          <div className="card-head"><h2>24h on-chain stats</h2><span className="meta">aggregated from settled events</span></div>
-          <div className="card-body" style={{ padding: 0 }}>
-            <StatsRibbon />
-          </div>
-        </section>
-        <section className="card glow" style={{ minHeight: 380 }}>
-          <div className="card-head"><h2>Vol-arb spread</h2><span className="meta">Predict IV vs Polymarket BTC binary</span></div>
-          <div className="card-body card-body-flex" style={{ minHeight: 320 }}>
-            <VolArbPlot />
-          </div>
-        </section>
-        <section className="card">
-          <div className="card-head"><h2>Strategy backtest</h2><span className="meta">simulate signals on the spread history</span></div>
-          <BacktestChart />
-        </section>
-        <div className="two-col">
-          <section className="card">
-            <div className="card-head"><h2>Live opportunities</h2><span className="meta">edge above threshold</span></div>
-            <div className="card-body card-body-flex" style={{ padding: 0, minHeight: 220 }}>
-              <OpportunitiesFeed />
-            </div>
+      <div className="tab-panel two-col" style={{ gridTemplateColumns: '1fr 200px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <section id="sec-stats" className="card">
+            <div className="card-head"><h2>24h on-chain stats</h2><span className="meta">aggregated from settled events</span></div>
+            <div className="card-body" style={{ padding: 0 }}><StatsRibbon /></div>
           </section>
-          <section className="card">
-            <div className="card-head"><h2>Bot health</h2><span className="meta">runtime config</span></div>
-            <BotHealthCard />
+          <section id="sec-spread" className="card glow" style={{ minHeight: 380 }}>
+            <div className="card-head"><h2>Vol-arb spread</h2><span className="meta">Predict IV vs Polymarket BTC binary</span></div>
+            <div className="card-body card-body-flex" style={{ minHeight: 320 }}><VolArbPlot /></div>
+          </section>
+          <section id="sec-backtest" className="card">
+            <div className="card-head"><h2>Strategy backtest</h2><span className="meta">simulate signals on the spread history</span></div>
+            <BacktestChart />
+          </section>
+          <div id="sec-opps" className="two-col">
+            <section className="card">
+              <div className="card-head"><h2>Live opportunities</h2><span className="meta">edge above threshold</span></div>
+              <div className="card-body card-body-flex" style={{ padding: 0, minHeight: 220 }}><OpportunitiesFeed /></div>
+            </section>
+            <section className="card">
+              <div className="card-head"><h2>Bot health</h2><span className="meta">runtime config</span></div>
+              <BotHealthCard />
+            </section>
+          </div>
+          <section id="sec-vault" className="card">
+            <div className="card-head"><h2>On-chain vault</h2><span className="meta">live Predict object state</span></div>
+            <VaultCard />
+          </section>
+          <section id="sec-wallet" className="card">
+            <div className="card-head"><h2>Wallet position lookup</h2><span className="meta">paste any Sui address</span></div>
+            <WalletLookupCard />
+          </section>
+          <section id="sec-tg" className="card">
+            <div className="card-head"><h2>Trade from Telegram</h2><span className="meta">predict-tg-bot</span></div>
+            <TGBotCard />
           </section>
         </div>
-        <section className="card">
-          <div className="card-head"><h2>On-chain vault</h2><span className="meta">live Predict object state</span></div>
-          <VaultCard />
-        </section>
-        <section className="card">
-          <div className="card-head"><h2>Trade from Telegram</h2><span className="meta">predict-tg-bot</span></div>
-          <TGBotCard />
-        </section>
+        <ScrollSpy sections={sections} />
       </div>
     );
   }
