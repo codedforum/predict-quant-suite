@@ -20,8 +20,6 @@ export default function HeroSection({ surface, oracles, current, stats }: Props)
 
   return (
     <section className="hero">
-      <div className="eyebrow">DeepBook Predict · Sui testnet</div>
-
       <h1>
         On-chain <span className="h-grad">volatility surface</span><br />
         and vol-arb monitor.

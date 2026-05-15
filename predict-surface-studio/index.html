@@ -3,22 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Predict Quant Suite | Live volatility tooling for DeepBook Predict on Sui</title>
-    <meta name="description" content="Live SVI volatility surface, vol-arb monitor, and trade calculator for DeepBook Predict on Sui. All on-chain. No wallet connection needed." />
-    <meta name="theme-color" content="#060612" />
+    <title>Predict Quant Suite</title>
+    <meta name="description" content="On-chain volatility surface, vol-arb monitor, and trade calculator. Read-only, no wallet needed." />
+    <meta name="theme-color" content="#0a0e1a" />
     <meta property="og:title" content="Predict Quant Suite" />
-    <meta property="og:description" content="Live volatility tooling for DeepBook Predict on Sui." />
+    <meta property="og:description" content="On-chain volatility tooling." />
     <meta property="og:type" content="website" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff6b00'/%3E%3Cstop offset='1' stop-color='%23fbbf24'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='38' font-family='Space Grotesk' font-weight='800' fill='%231a0d00'%3E%CF%83%3C/text%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%231e6ef3'/%3E%3Cstop offset='1' stop-color='%235ca9ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='38' font-family='Space Grotesk' font-weight='800' fill='%23fff'%3E%CF%83%3C/text%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
   </head>
   <body>
+    <div class="bg-aurora"></div>
     <div class="bg-grid"></div>
     <div class="bg-orb orb-1"></div>
     <div class="bg-orb orb-2"></div>
     <div class="bg-orb orb-3"></div>
+    <svg class="sui-drops" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <symbol id="sui-drop" viewBox="0 0 32 40">
+          <path d="M16 1 C 16 1 4 16 4 26 a 12 12 0 0 0 24 0 c 0 -10 -12 -25 -12 -25 z M 16 9 C 16 9 22 17 22 24 a 6 6 0 0 1 -12 0 c 0 -7 6 -15 6 -15 z" fill="currentColor"/>
+        </symbol>
+      </defs>
+      <use class="sui-drop" href="#sui-drop" />
+      <use class="sui-drop" href="#sui-drop" />
+      <use class="sui-drop" href="#sui-drop" />
+      <use class="sui-drop" href="#sui-drop" />
+      <use class="sui-drop" href="#sui-drop" />
+      <use class="sui-drop" href="#sui-drop" />
+      <use class="sui-drop" href="#sui-drop" />
+      <use class="sui-drop" href="#sui-drop" />
+    </svg>
+    <div class="bg-shimmer"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
