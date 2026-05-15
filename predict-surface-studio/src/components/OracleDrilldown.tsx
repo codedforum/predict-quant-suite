@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchOracleDrill, OracleDrill } from '../lib/predictApi';
+import Sparkline from './Sparkline';
 
 interface Props { oracleId: string; onClose: () => void }
 
@@ -64,6 +65,12 @@ export default function OracleDrilldown({ oracleId, onClose }: Props) {
                   <div className="ds-sub">{d.priceHistory.length} price updates</div>
                 </div>
               </div>
+
+              <h3>SVI sigma (curvature) over time</h3>
+              <Sparkline data={d.sviHistory.map((s) => ({ ts: s.ts, v: s.sigma }))} label="σ" />
+
+              <h3>Forward price over time</h3>
+              <Sparkline data={d.priceHistory.map((p) => ({ ts: p.ts, v: p.forward }))} color="#22c55e" fillOpacity={0.10} label="forward" />
 
               <h3>Recent SVI parameter updates</h3>
               <div className="drill-table-wrap">

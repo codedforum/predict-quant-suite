@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchLeaderboard, LeaderboardRow } from '../lib/predictApi';
+import { downloadCsv } from '../lib/csv';
 
 export default function LeaderboardCard() {
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
@@ -20,8 +21,14 @@ export default function LeaderboardCard() {
 
   const top = rows[0];
 
+  function exportCsv() {
+    downloadCsv('predict-leaderboard-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.csv',
+      rows.map((r, i) => ({ rank: i + 1, manager: r.manager, payout: r.payout.toFixed(2), wins: r.wins, mints: r.mints, cost: r.cost.toFixed(2), net: r.net.toFixed(2) })));
+  }
+
   return (
     <div className="card-body" style={{ padding: 0 }}>
+      <div className="activity-toolbar"><span>{rows.length} traders</span><button className="icon-btn" onClick={exportCsv}>⬇ csv</button></div>
       <div className="lb-hero">
         <div className="lb-hero-rank">#1</div>
         <div className="lb-hero-body">

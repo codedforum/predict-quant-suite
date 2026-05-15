@@ -1002,6 +1002,63 @@ h1, h2, h3, h4 { font-family: var(--sg); margin: 0; font-weight: 700; letter-spa
 .bt-stat .ds-label { font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
 .bt-stat .ds-value { font-family: var(--sg); font-weight: 800; font-size: 18px; color: var(--t1); font-variant-numeric: tabular-nums; margin-top: 4px; }
 
+/* ============ Sparkline ============ */
+.sparkline { background: var(--glass); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px 8px; margin-bottom: 14px; }
+.sparkline-foot { display: flex; gap: 12px; font-family: var(--mono); font-size: 10px; color: var(--t3); padding: 4px 4px 0; }
+.sparkline-foot .spk-label { color: var(--t1); font-weight: 700; }
+.sparkline-foot .spk-now { margin-left: auto; color: var(--sui-blue); }
+
+/* ============ Wallet lookup ============ */
+.wallet-mgr {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+  transition: border-color 0.15s;
+}
+.wallet-mgr:hover { border-color: rgba(41,141,255,0.3); }
+.wm-head { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; color: var(--t1); }
+.wm-rank {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: linear-gradient(135deg, var(--sui-blue-deep), var(--sui-blue));
+  color: #fff; font-weight: 800; font-size: 10px;
+  display: grid; place-items: center;
+}
+.wm-meta { display: flex; gap: 14px; font-family: var(--mono); font-size: 11px; color: var(--t3); flex-wrap: wrap; }
+
+/* ============ Compare oracles ============ */
+.cmp-pickers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cmp-side { display: flex; flex-direction: column; gap: 4px; }
+.cmp-label { font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+.cmp-side select { background: var(--glass); color: var(--t1); border: 1px solid var(--border-2); border-radius: 8px; padding: 8px 10px; font-family: var(--mono); font-size: 12px; }
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
+.cmp-table th { text-align: left; padding: 8px 10px; font-family: var(--inter); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t2); font-weight: 600; border-bottom: 1px solid var(--border-2); }
+.cmp-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.cmp-table .cmp-key { color: var(--t2); }
+.cmp-table .ca { color: var(--sui-blue); text-align: right; }
+.cmp-table .cb { color: var(--green); text-align: right; }
+
+/* ============ Scroll-spy nav ============ */
+.spy-nav {
+  position: sticky; top: 132px; z-index: 4;
+  display: none; flex-direction: column; gap: 2px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px;
+  backdrop-filter: blur(10px);
+}
+@media (min-width: 1100px) { .spy-nav { display: flex; } }
+.spy-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 6px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--t3); cursor: pointer; border: 0; background: transparent;
+  text-align: left;
+  transition: all 0.15s;
+}
+.spy-link:hover { color: var(--t1); background: var(--glass); }
+.spy-link.active { color: var(--sui-blue); background: var(--glass-2); }
+.spy-link::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--t3); }
+.spy-link.active::before { background: var(--sui-blue); box-shadow: 0 0 6px var(--sui-blue-glow); }
+
 /* ============ TG bot card ============ */
 .tg-cmds { display: flex; flex-direction: column; gap: 6px; }
 .tg-cmd {

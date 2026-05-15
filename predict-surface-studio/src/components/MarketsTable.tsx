@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SviSnapshot } from '../lib/predictApi';
 import { iv } from '../lib/sviMath';
+import { downloadCsv } from '../lib/csv';
 
 type SortKey = 'idx' | 'expiry' | 'atm' | 'days';
 
@@ -33,8 +34,21 @@ export default function MarketsTable({ oracles, selectedIdx, onSelect }: { oracl
     </th>
   );
 
+  function exportCsv() {
+    downloadCsv('predict-markets-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.csv',
+      rows.map((r) => ({
+        rank: r.i + 1, oracleId: r.oracle.oracleId,
+        expiry: r.oracle.expirySec ? new Date(r.oracle.expirySec * 1000).toISOString() : '',
+        days: r.days.toFixed(2),
+        atmIv: (r.atm * 100).toFixed(2) + '%',
+        skew25d: (r.skew * 100).toFixed(2) + '%',
+        forward: r.oracle.forward.toFixed(2),
+      })));
+  }
+
   return (
     <div className="markets-wrap">
+      <div className="activity-toolbar"><span>{rows.length} oracles</span><button className="icon-btn" onClick={exportCsv}>⬇ csv</button></div>
       <table className="markets-table">
         <thead>
           <tr>
