@@ -1,7 +1,6 @@
-import { SviParams, SviSliceMeta } from './sviMath';
+import { SviParams } from './sviMath';
 
-const DEFAULT_BASE = (import.meta as any).env?.VITE_PREDICT_SERVER ?? 'https://predict-server.testnet.mystenlabs.com';
-const FLOAT_SCALING = 1e9;
+const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? 'https://predict-api.smartcodedbot.com';
 
 export interface SviSnapshot {
   oracleId: string;
@@ -9,62 +8,41 @@ export interface SviSnapshot {
   forward: number;
   expirySec: number;
   svi: SviParams;
-  allSlices?: SviSliceMeta[];
+  source?: string;
 }
 
-interface I64Json { magnitude: string | number; is_negative: boolean }
-
-function decodeI64(v: I64Json | number | string | null | undefined): number {
-  if (v == null) return 0;
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string') return Number(v);
-  const mag = Number((v as I64Json).magnitude ?? 0);
-  return (v as I64Json).is_negative ? -mag : mag;
+export interface SurfaceResponse {
+  primary: SviSnapshot;
+  oracles: { oracleId: string; lastUpdateMs: number; svi: SviParams }[];
+  ts: number;
+  source: string;
+  cache: 'hit' | 'miss';
 }
 
-export async function fetchLatestSviSnapshots(base = DEFAULT_BASE): Promise<SviSnapshot[]> {
+export async function fetchSurface(): Promise<SurfaceResponse | null> {
   try {
-    const r = await fetch(`${base}/api/oracles/svi?limit=120`);
-    if (!r.ok) throw new Error(`predict-server ${r.status}`);
+    const r = await fetch(`${API_BASE}/api/surface`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`api ${r.status}`);
     const j = await r.json();
-    const arr = j.snapshots ?? j ?? [];
-    return arr.map(normalize);
+    return j;
   } catch (e) {
-    console.warn('falling back to mock surface', e);
-    return mockSeries();
+    console.error('fetchSurface failed', e);
+    return null;
   }
 }
 
-function normalize(raw: any): SviSnapshot {
-  const svi = raw.svi ?? raw;
-  return {
-    oracleId: String(raw.oracle_id ?? raw.oracleId ?? ''),
-    timestampMs: Number(raw.timestamp ?? raw.timestampMs ?? raw.ts ?? Date.now()),
-    forward: Number(raw.forward ?? raw.forward_price ?? 0) / FLOAT_SCALING,
-    expirySec: Number(raw.expiry ?? raw.expirySec ?? 0),
-    svi: {
-      a: Number(svi.a ?? 0.04 * FLOAT_SCALING) / FLOAT_SCALING,
-      b: Number(svi.b ?? 0.4 * FLOAT_SCALING) / FLOAT_SCALING,
-      rho: decodeI64(svi.rho) / FLOAT_SCALING,
-      m: decodeI64(svi.m) / FLOAT_SCALING,
-      sigma: Number(svi.sigma ?? 0.2 * FLOAT_SCALING) / FLOAT_SCALING,
-    },
-  };
-}
-
-function mockSeries(): SviSnapshot[] {
-  const now = Date.now();
-  return Array.from({ length: 60 }, (_, i) => ({
-    oracleId: '0xMOCK',
-    timestampMs: now - (60 - i) * 60_000,
-    forward: 70_000 + Math.sin(i / 4) * 800,
-    expirySec: Math.floor(now / 1000) + 3600,
-    svi: {
-      a: 0.03 + 0.005 * Math.sin(i / 6),
-      b: 0.35 + 0.03 * Math.cos(i / 5),
-      rho: -0.25 + 0.05 * Math.sin(i / 7),
-      m: 0.01 * Math.sin(i / 3),
-      sigma: 0.18 + 0.02 * Math.cos(i / 4),
-    },
-  }));
+// Build a synthetic snapshot list across the available oracles so the
+// time-travel slider has something to scrub through immediately.
+export function snapshotsFromSurface(s: SurfaceResponse): SviSnapshot[] {
+  const snaps: SviSnapshot[] = [];
+  for (const o of s.oracles) {
+    snaps.push({
+      oracleId: o.oracleId,
+      timestampMs: o.lastUpdateMs,
+      forward: s.primary.forward,
+      expirySec: s.primary.expirySec,
+      svi: o.svi,
+    });
+  }
+  return snaps.length ? snaps : [s.primary];
 }
