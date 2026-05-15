@@ -332,3 +332,163 @@ button, input { font-family: inherit; }
 /* ============ Misc ============ */
 .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 .empty { padding: 40px 20px; text-align: center; color: var(--text-dim); font-size: 13px; }
+
+/* ============ Header buttons ============ */
+.icon-btn {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  background: transparent; border: 1px solid var(--border-bold);
+  border-radius: 8px; color: var(--text-secondary);
+  cursor: pointer; font-size: 14px;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.icon-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--accent); }
+.icon-btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; padding: 0 12px; width: auto; gap: 6px; display: inline-flex; }
+.icon-btn.primary:hover { background: #7eb1ff; }
+
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ============ Freshness dot ============ */
+.fresh-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.fresh-dot.fresh { background: var(--good); box-shadow: 0 0 4px rgba(0,230,118,.5); }
+.fresh-dot.stale { background: var(--warn); }
+.fresh-dot.old   { background: var(--bad); }
+
+/* ============ Slide-up sheet (calc) ============ */
+.scrim {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+.sheet {
+  position: fixed; z-index: 100; background: var(--bg-card);
+  border: 1px solid var(--border-bold); display: flex; flex-direction: column;
+  /* mobile: bottom sheet */
+  left: 0; right: 0; bottom: 0; top: auto;
+  border-radius: 16px 16px 0 0;
+  max-height: 92vh;
+  animation: sheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 900px) {
+  .sheet {
+    /* desktop: right rail */
+    left: auto; right: 0; top: 0; bottom: 0;
+    width: 420px;
+    border-radius: 0;
+    border-left: 1px solid var(--border-bold);
+    max-height: 100vh;
+    animation: sheetIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+@keyframes sheetUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+@keyframes sheetIn { from { transform: translateX(100%) } to { transform: translateX(0) } }
+.sheet-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 18px; border-bottom: 1px solid var(--border-subtle);
+}
+.sheet-head h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.sheet-body { padding: 18px; overflow-y: auto; flex: 1; }
+.sheet-handle {
+  width: 36px; height: 4px; background: var(--border-bold); border-radius: 2px;
+  margin: 8px auto 0;
+}
+@media (min-width: 900px) { .sheet-handle { display: none; } }
+
+/* ============ Form ============ */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 500; }
+.field input, .field select {
+  background: var(--bg-main); color: var(--text-primary);
+  border: 1px solid var(--border-bold); border-radius: 8px;
+  padding: 10px 12px; font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.toggle-group { display: flex; gap: 0; border: 1px solid var(--border-bold); border-radius: 8px; overflow: hidden; }
+.toggle-group button {
+  flex: 1; background: transparent; color: var(--text-secondary);
+  border: 0; padding: 10px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background 0.2s, color 0.2s;
+}
+.toggle-group button.active { background: var(--accent); color: #000; }
+.toggle-group button:not(:last-child) { border-right: 1px solid var(--border-bold); }
+
+.calc-result {
+  background: var(--bg-main); border: 1px solid var(--border-bold);
+  border-radius: 8px; padding: 14px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  display: grid; grid-template-columns: auto 1fr; gap: 8px 16px;
+  font-variant-numeric: tabular-nums;
+}
+.calc-result .k { color: var(--text-secondary); }
+.calc-result .v { color: var(--text-primary); text-align: right; }
+.calc-result .v.big { font-size: 16px; font-weight: 600; color: var(--accent); }
+.calc-result .v.green { color: var(--good); }
+.calc-result .v.red { color: var(--bad); }
+
+/* ============ About modal ============ */
+.modal {
+  position: fixed; z-index: 100;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  background: var(--bg-card); border: 1px solid var(--border-bold);
+  border-radius: 12px; max-width: 580px; width: calc(100vw - 32px);
+  max-height: 85vh; display: flex; flex-direction: column;
+  animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalIn { from { transform: translate(-50%, -45%); opacity: 0 } to { transform: translate(-50%, -50%); opacity: 1 } }
+.modal-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--border-subtle); }
+.modal-head h2 { margin: 0; font-size: 16px; }
+.modal-body { padding: 22px; overflow-y: auto; line-height: 1.65; color: var(--text-secondary); font-size: 13px; }
+.modal-body h3 { color: var(--text-primary); font-size: 13px; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+.modal-body p:first-child { margin-top: 0; }
+.modal-body code { background: var(--bg-main); padding: 1px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); }
+.modal-body a { color: var(--accent); }
+
+/* ============ Toasts ============ */
+.toast-stack {
+  position: fixed; z-index: 80;
+  bottom: calc(var(--bottom-nav-h) + 14px); right: 14px; left: 14px;
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none;
+}
+@media (min-width: 900px) { .toast-stack { left: auto; bottom: 14px; max-width: 360px; } }
+.toast {
+  background: var(--bg-card); border: 1px solid var(--border-bold);
+  border-radius: 8px; padding: 12px 14px; font-size: 12px;
+  display: flex; align-items: center; gap: 10px;
+  pointer-events: auto;
+  animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes toastIn { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+.toast .badge {
+  width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 700;
+}
+.toast.mint   .badge { background: rgba(91,157,255,.16); color: var(--accent); }
+.toast.redeem .badge { background: rgba(0,230,118,.16); color: var(--good); }
+.toast.settle .badge { background: rgba(244,63,94,.16); color: var(--bad); }
+.toast .body { flex: 1; min-width: 0; }
+.toast .body .title { font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.toast .body .sub   { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+/* ============ More drawer (mobile) ============ */
+.more-drawer {
+  position: fixed; z-index: 90;
+  bottom: var(--bottom-nav-h); left: 0; right: 0;
+  background: var(--bg-card); border-top: 1px solid var(--border-bold);
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  animation: sheetUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.more-drawer button {
+  background: var(--bg-main); border: 1px solid var(--border-bold); border-radius: 8px;
+  padding: 16px 8px; color: var(--text-primary);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-size: 11px; cursor: pointer;
+}
+.more-drawer button .icon { font-size: 18px; }
+@media (min-width: 900px) { .more-drawer { display: none; } }
