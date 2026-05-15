@@ -138,6 +138,89 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// On-chain Predict vault state. 30s cache.
+let vaultCache = { data: null, ts: 0 };
+app.get('/api/vault', async (req, res) => {
+  try {
+    if (Date.now() - vaultCache.ts < 30_000 && vaultCache.data) return res.json({ ...vaultCache.data, cache: 'hit' });
+    const obj = process.env.PREDICT_OBJECT;
+    if (!obj) throw new Error('PREDICT_OBJECT not set');
+    const r = await sui.getObject({ id: obj, options: { showContent: true, showType: true } });
+    const f = r.data?.content?.fields ?? {};
+    const pricing = f.pricing_config?.fields ?? {};
+    const risk = f.risk_config?.fields ?? {};
+    const wlim = f.withdrawal_limiter?.fields ?? {};
+    const vault = f.vault?.fields ?? {};
+    const tcap = f.treasury_cap?.fields ?? {};
+    const acceptedTypes = (f.treasury_config?.fields?.accepted_quotes?.fields?.contents ?? []).map((t) => {
+      const s = t.fields?.name || JSON.stringify(t);
+      return s.replace(/^.*::/, '');
+    });
+    const out = {
+      ts: Date.now(),
+      trading_paused: !!f.trading_paused,
+      vault_balance_dusdc: Number(vault.balance ?? 0) / 1e6,
+      plp_supply: Number(tcap.total_supply?.fields?.value ?? tcap.total_supply ?? 0) / 1e6,
+      base_spread_bps: Number(pricing.base_spread ?? 0) / 1e9 * 10000,
+      min_ask_price: Number(pricing.min_ask_price ?? 0) / 1e9,
+      max_ask_price: Number(pricing.max_ask_price ?? 0) / 1e9,
+      max_total_exposure_pct: Number(risk.max_total_exposure_pct ?? 0) / 1e9 * 100,
+      withdrawal_limiter: {
+        enabled: !!wlim.enabled,
+        available: Number(wlim.available ?? 0) / 1e6,
+        capacity: Number(wlim.capacity ?? 0) / 1e6,
+      },
+      accepted_quotes: acceptedTypes,
+    };
+    vaultCache = { data: out, ts: Date.now() };
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) {
+    res.status(503).json({ error: e.message });
+  }
+});
+
+// Per-oracle drill-down: recent SVI history + price history + settlement state.
+app.get('/api/oracle/:id', async (req, res) => {
+  try {
+    const oid = req.params.id;
+    if (!PKG) throw new Error('PREDICT_PKG not set');
+    const [sviRaw, priceRaw, obj] = await Promise.all([
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::oracle::OracleSVIUpdated` },     limit: 30, order: 'descending' }),
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::oracle::OraclePricesUpdated` }, limit: 30, order: 'descending' }),
+      sui.getObject({ id: oid, options: { showContent: true } }),
+    ]);
+    const decodeI64 = (v) => v == null ? 0 : (typeof v === 'object' ? (Number(v.magnitude) * (v.is_negative ? -1 : 1)) : Number(v));
+    const sviHistory = sviRaw.data
+      .filter((e) => e.parsedJson?.oracle_id === oid)
+      .map((e) => {
+        const p = e.parsedJson;
+        return {
+          ts: Number(e.timestampMs),
+          a: Number(p.a) / 1e9, b: Number(p.b) / 1e9,
+          rho: decodeI64(p.rho) / 1e9, m: decodeI64(p.m) / 1e9,
+          sigma: Number(p.sigma) / 1e9,
+        };
+      });
+    const priceHistory = priceRaw.data
+      .filter((e) => e.parsedJson?.oracle_id === oid)
+      .map((e) => ({ ts: Number(e.timestampMs), spot: Number(e.parsedJson.spot) / 1e9, forward: Number(e.parsedJson.forward) / 1e9 }));
+    const fields = obj.data?.content?.fields ?? {};
+    res.json({
+      oracleId: oid,
+      type: obj.data?.type,
+      expiry_ms: Number(fields.expiry ?? fields.expiry_ms ?? 0),
+      is_settled: !!fields.is_settled,
+      settlement_price: fields.settlement_price ? Number(fields.settlement_price) / 1e9 : null,
+      svi_updates: sviHistory.length,
+      price_updates: priceHistory.length,
+      sviHistory,
+      priceHistory,
+    });
+  } catch (e) {
+    res.status(503).json({ error: e.message });
+  }
+});
+
 // Live arb opportunities (computed on the fly from latest spread + edge threshold).
 app.get('/api/opportunities', (req, res) => {
   const minEdge = parseFloat(req.query.minEdge || process.env.MIN_EDGE_VOL || '0.04');
