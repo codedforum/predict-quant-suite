@@ -26,6 +26,10 @@ import LiveTicker from './components/LiveTicker';
 import ProbabilityHistogram from './components/ProbabilityHistogram';
 import VolatilityCone from './components/VolatilityCone';
 import TourMode, { shouldShowTour } from './components/TourMode';
+import SettlementCountdown from './components/SettlementCountdown';
+import OrderBookCard from './components/OrderBookCard';
+import StrikeFlowHeatmap from './components/StrikeFlowHeatmap';
+import HourActivityHeatmap from './components/HourActivityHeatmap';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -108,6 +112,7 @@ export default function App() {
       </nav>
 
       <LiveTicker />
+      <SettlementCountdown oracles={oracles} />
 
       <HeroSection surface={surface} oracles={oracles} current={current} stats={stats} />
 
@@ -308,16 +313,22 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
 
   if (tab === 'activity') {
     return (
-      <div className="tab-panel two-col">
-        <section className="card tall" style={{ minHeight: 480 }}>
-          <div className="card-head"><h2>On-chain activity</h2><span className="meta">recent Predict events</span></div>
-          <div className="card-body card-body-flex" style={{ padding: 0 }}>
-            <ActivityFeed />
-          </div>
-        </section>
+      <div className="tab-panel">
+        <div className="two-col">
+          <section className="card tall" style={{ minHeight: 480 }}>
+            <div className="card-head"><h2>On-chain activity</h2><span className="meta">recent Predict events</span></div>
+            <div className="card-body card-body-flex" style={{ padding: 0 }}>
+              <ActivityFeed />
+            </div>
+          </section>
+          <section className="card">
+            <div className="card-head"><h2>24h Leaderboard</h2><span className="meta">top managers + #1 equity curve</span></div>
+            <LeaderboardCard />
+          </section>
+        </div>
         <section className="card">
-          <div className="card-head"><h2>24h Leaderboard</h2><span className="meta">top managers by payout</span></div>
-          <LeaderboardCard />
+          <div className="card-head"><h2>Activity heatmap</h2><span className="meta">7-day mint volume by hour-of-day (UTC)</span></div>
+          <HourActivityHeatmap />
         </section>
       </div>
     );
@@ -332,14 +343,23 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
             {oracles.length ? <MarketsTable oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : skel}
           </div>
         </section>
-        <section className="card tall" style={{ minHeight: 360 }}>
-          <div className="card-head">
-            <h2>Strike chain (selected oracle)</h2>
-            <span className="meta">{current ? current.oracleId.slice(0, 14) + '...' : '-'}</span>
-          </div>
-          <div className="card-body card-body-flex" style={{ padding: 0 }}>
-            {current ? <StrikeGrid snapshot={current} /> : skel}
-          </div>
+        <div className="two-col">
+          <section className="card glow">
+            <div className="card-head"><h2>Live order book</h2><span className="meta">on-chain quotes via devInspect</span></div>
+            <div className="card-body" style={{ padding: 0 }}>
+              {current ? <OrderBookCard oracle={current} /> : skel}
+            </div>
+          </section>
+          <section className="card">
+            <div className="card-head"><h2>BSM strike chain</h2><span className="meta">approximated</span></div>
+            <div className="card-body card-body-flex" style={{ padding: 0 }}>
+              {current ? <StrikeGrid snapshot={current} /> : skel}
+            </div>
+          </section>
+        </div>
+        <section className="card">
+          <div className="card-head"><h2>24h trade flow per strike</h2><span className="meta">where the volume is going</span></div>
+          {current ? <StrikeFlowHeatmap oracle={current} /> : skel}
         </section>
       </div>
     );
