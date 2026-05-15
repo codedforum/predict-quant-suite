@@ -34,5 +34,30 @@ app.get('/api/state', (req, res) => {
   });
 });
 
+// SVI surface for the frontend - hits the chain via predictClient with a 30s cache.
+import { listOracles, fetchPredictSurface } from '../predictClient.js';
+let surfaceCache = { data: null, ts: 0 };
+app.get('/api/surface', async (req, res) => {
+  try {
+    if (Date.now() - surfaceCache.ts < 30_000 && surfaceCache.data) {
+      return res.json({ ...surfaceCache.data, cache: 'hit' });
+    }
+    const [primary, oracles] = await Promise.all([
+      fetchPredictSurface({ symbol: 'BTC' }),
+      listOracles({ symbol: 'BTC', windowMs: 5 * 60_000 }),
+    ]);
+    const out = {
+      ts: Date.now(),
+      primary: { ...primary, smile: undefined },
+      oracles,
+      source: primary.source,
+    };
+    surfaceCache = { data: out, ts: Date.now() };
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) {
+    res.status(503).json({ error: e.message });
+  }
+});
+
 const PORT = parseInt(process.env.DASHBOARD_PORT || '3097', 10);
 app.listen(PORT, () => console.log(`vol-arb dashboard on :${PORT} (CORS: ${ALLOWED_ORIGINS.join(', ')})`));
