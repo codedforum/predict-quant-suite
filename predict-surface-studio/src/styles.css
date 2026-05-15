@@ -1026,6 +1026,62 @@ h1, h2, h3, h4 { font-family: var(--sg); margin: 0; font-weight: 700; letter-spa
 .bt-stat .ds-label { font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
 .bt-stat .ds-value { font-family: var(--sg); font-weight: 800; font-size: 18px; color: var(--t1); font-variant-numeric: tabular-nums; margin-top: 4px; }
 
+/* ============ Live trade ticker ============ */
+.ticker-wrap {
+  position: sticky; top: 60px; z-index: 22;
+  display: flex; align-items: center;
+  background: rgba(6, 6, 18, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  height: 36px;
+  overflow: hidden;
+}
+.ticker-pin {
+  flex-shrink: 0;
+  padding: 0 14px; height: 100%;
+  display: flex; align-items: center;
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--sui-blue);
+  background: linear-gradient(90deg, rgba(41,141,255,.18), rgba(41,141,255,.04) 80%, transparent);
+  border-right: 1px solid var(--border-2);
+}
+.ticker-track {
+  display: flex; gap: 28px;
+  white-space: nowrap;
+  animation: tickerScroll 80s linear infinite;
+  padding-left: 24px;
+}
+@keyframes tickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+.ticker-item { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; }
+.ticker-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.ticker-dot.mint   { background: var(--sui-blue); box-shadow: 0 0 6px var(--sui-blue-glow); }
+.ticker-dot.redeem { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,.5); }
+.ticker-dot.svi    { background: var(--purple); }
+.ticker-dot.settle { background: var(--red); box-shadow: 0 0 6px rgba(239,68,68,.5); }
+.ticker-time { color: var(--t3); }
+.ticker-kind { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 3px; font-size: 9.5px; }
+.ticker-kind.mint   { background: rgba(41,141,255,.14); color: var(--sui-blue); }
+.ticker-kind.redeem { background: rgba(34,197,94,.14); color: var(--green); }
+.ticker-kind.svi    { background: rgba(168,85,247,.14); color: var(--purple); }
+.ticker-kind.settle { background: rgba(239,68,68,.14); color: var(--red); }
+.ticker-body { color: var(--t1); }
+
+/* ============ Probability histogram ============ */
+.ph-wrap { display: flex; flex-direction: column; gap: 8px; }
+.ph-foot { font-family: var(--mono); font-size: 11px; color: var(--t3); padding-top: 4px; }
+
+/* ============ Payoff diagram ============ */
+.payoff {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px;
+  margin-bottom: 14px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.payoff svg { width: 100%; height: 110px; }
+.payoff-foot { font-family: var(--mono); font-size: 10px; color: var(--t3); text-align: center; }
+
 /* ============ Sparkline ============ */
 .sparkline { background: var(--glass); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px 8px; margin-bottom: 14px; }
 .sparkline-foot { display: flex; gap: 12px; font-family: var(--mono); font-size: 10px; color: var(--t3); padding: 4px 4px 0; }

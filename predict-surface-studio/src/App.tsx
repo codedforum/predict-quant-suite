@@ -22,6 +22,8 @@ import BacktestChart from './components/BacktestChart';
 import WalletLookupCard from './components/WalletLookupCard';
 import CompareOraclesPanel from './components/CompareOraclesPanel';
 import ScrollSpy from './components/ScrollSpy';
+import LiveTicker from './components/LiveTicker';
+import ProbabilityHistogram from './components/ProbabilityHistogram';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -97,6 +99,8 @@ export default function App() {
         </div>
       </nav>
 
+      <LiveTicker />
+
       <HeroSection surface={surface} oracles={oracles} current={current} stats={stats} />
 
       <div className="tabs-wrap">
@@ -140,7 +144,8 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
 
   if (tab === 'surface') {
     return (
-      <div className="tab-panel two-col">
+      <div className="tab-panel">
+        <div className="two-col">
         <section className="card glow tall" style={{ minHeight: 540 }}>
           <div className="card-head">
             <h2>Volatility Surface</h2>
@@ -178,6 +183,16 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
             </div>
           </div>
         </aside>
+        </div>
+        <section className="card glow">
+          <div className="card-head">
+            <h2>Implied probability distribution</h2>
+            <span className="meta">where BTC will land at expiry, by ${((current?.forward || 79000) * 0.015 / 1000).toFixed(1)}k bins</span>
+          </div>
+          <div className="card-body">
+            {current ? <ProbabilityHistogram snapshot={current} /> : skel}
+          </div>
+        </section>
       </div>
     );
   }
