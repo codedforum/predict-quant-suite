@@ -13,6 +13,9 @@ import StatsRibbon from './components/StatsRibbon';
 import OpportunitiesFeed from './components/OpportunitiesFeed';
 import BotHealthCard from './components/BotHealthCard';
 import TGBotCard from './components/TGBotCard';
+import VaultCard from './components/VaultCard';
+import Heatmap2D from './components/Heatmap2D';
+import OracleDrilldown from './components/OracleDrilldown';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -32,6 +35,8 @@ export default function App() {
   });
   const [calcOpen, setCalcOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [drillOracle, setDrillOracle] = useState<string | null>(null);
+  const [surfaceMode, setSurfaceMode] = useState<'3d' | '2d'>('3d');
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +99,17 @@ export default function App() {
       </div>
 
       <main className="main">
-        <TabPanel tab={tab} oracles={oracles} current={current} idx={idx} setIdx={setIdx} error={error} />
+        <TabPanel
+          tab={tab}
+          oracles={oracles}
+          current={current}
+          idx={idx}
+          setIdx={setIdx}
+          error={error}
+          onDrillOracle={setDrillOracle}
+          surfaceMode={surfaceMode}
+          setSurfaceMode={setSurfaceMode}
+        />
       </main>
 
       <footer className="foot">
@@ -105,12 +120,13 @@ export default function App() {
         <CalculatorSheet oracles={oracles} selectedIdx={idx} onSelect={setIdx} onClose={() => setCalcOpen(false)} />
       )}
       {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
+      {drillOracle && <OracleDrilldown oracleId={drillOracle} onClose={() => setDrillOracle(null)} />}
       <Toasts />
     </div>
   );
 }
 
-function TabPanel({ tab, oracles, current, idx, setIdx, error }: any) {
+function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, surfaceMode, setSurfaceMode }: any) {
   const skel = <div className="skeleton" style={{ height: 380 }} />;
 
   if (error && !oracles.length) {
@@ -123,10 +139,18 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error }: any) {
         <section className="card glow tall" style={{ minHeight: 540 }}>
           <div className="card-head">
             <h2>Volatility Surface</h2>
-            <span className="meta">{current ? current.oracleId.slice(0, 14) + '...' + current.oracleId.slice(-4) : 'loading'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className="mode-toggle">
+                <button className={surfaceMode === '3d' ? 'active' : ''} onClick={() => setSurfaceMode('3d')}>3D</button>
+                <button className={surfaceMode === '2d' ? 'active' : ''} onClick={() => setSurfaceMode('2d')}>2D heatmap</button>
+              </div>
+              <span className="meta oracle-id-link" onClick={() => current && onDrillOracle(current.oracleId)}>
+                {current ? current.oracleId.slice(0, 12) + '...' + current.oracleId.slice(-4) : 'loading'}
+              </span>
+            </div>
           </div>
           <div className="card-body card-body-flex" style={{ padding: 0, minHeight: 480 }}>
-            {current ? <SurfaceViewer snapshot={current} /> : skel}
+            {current ? (surfaceMode === '3d' ? <SurfaceViewer snapshot={current} /> : <Heatmap2D snapshot={current} />) : skel}
           </div>
         </section>
         <aside className="side">
@@ -220,6 +244,10 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error }: any) {
             <BotHealthCard />
           </section>
         </div>
+        <section className="card">
+          <div className="card-head"><h2>On-chain vault</h2><span className="meta">live Predict object state</span></div>
+          <VaultCard />
+        </section>
         <section className="card">
           <div className="card-head"><h2>Trade from Telegram</h2><span className="meta">predict-tg-bot</span></div>
           <TGBotCard />

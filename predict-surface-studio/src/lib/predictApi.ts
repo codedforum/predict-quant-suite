@@ -82,6 +82,41 @@ export async function fetchHealth(): Promise<Health | null> {
   } catch { return null; }
 }
 
+export interface Vault {
+  trading_paused: boolean;
+  vault_balance_dusdc: number;
+  plp_supply: number;
+  base_spread_bps: number;
+  min_ask_price: number;
+  max_ask_price: number;
+  max_total_exposure_pct: number;
+  withdrawal_limiter: { enabled: boolean; available: number; capacity: number };
+  accepted_quotes: string[];
+}
+export async function fetchVault(): Promise<Vault | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/vault`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+export interface OracleDrill {
+  oracleId: string;
+  expiry_ms: number;
+  is_settled: boolean;
+  settlement_price: number | null;
+  sviHistory: { ts: number; a: number; b: number; rho: number; m: number; sigma: number }[];
+  priceHistory: { ts: number; spot: number; forward: number }[];
+}
+export async function fetchOracleDrill(oracleId: string): Promise<OracleDrill | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/oracle/${oracleId}`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
 export interface ArbOpportunity {
   ts: number; predictIv: number; polyIv: number;
   edge: number; side: 'buyPredict' | 'sellPredict'; kelly: number;

@@ -101,20 +101,43 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
             <input type="number" value={size} step="10" min="0" onChange={(e) => setSize(parseFloat(e.target.value) || 0)} />
           </div>
 
-          {result && (
-            <div className="calc-result">
-              <span className="k">Forward</span><span className="v">${result.F.toFixed(2)}</span>
-              <span className="k">Days to expiry</span><span className="v">{(result.T * 365).toFixed(2)}d</span>
-              <span className="k">log-moneyness k</span><span className="v">{result.k.toFixed(4)}</span>
-              <span className="k">IV at strike</span><span className="v">{(result.sigma * 100).toFixed(2)}%</span>
-              <span className="k">P(in the money)</span><span className="v">{(result.probInTheMoney * 100).toFixed(2)}%</span>
-              <span className="k" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 10 }}>Cost (≈)</span>
-              <span className="v big" style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 10 }}>{result.cost.toFixed(2)} dUSDC</span>
-              <span className="k">Max payout</span><span className="v green">{result.maxPayout.toFixed(2)} dUSDC</span>
-              <span className="k">Max profit</span><span className="v green">+{result.profit.toFixed(2)}</span>
-              <span className="k">Max loss</span><span className="v red">−{result.cost.toFixed(2)}</span>
-            </div>
-          )}
+          {result && (() => {
+            // Greeks for binary digital. Approximate via Black-Scholes formulas.
+            // d2 = (-k - 0.5 σ² T) / (σ √T)
+            // pdf(d2) = exp(-d2²/2) / √(2π)
+            // For binary CALL paying 1 if S_T > K:
+            //   delta ≈ pdf(d2) / (F σ √T)
+            //   gamma ≈ -d1 · pdf(d2) / (F² σ² T)  where d1 = d2 + σ√T
+            //   vega  ≈ -d1 · pdf(d2) / σ
+            //   theta ≈ pdf(d2) · (k / (T σ √T) + (1 - d1·k) / (2 T))   (per-year)
+            const F = result.F, T = result.T, sigma = result.sigma, k = result.k;
+            const sqrtT = Math.sqrt(T);
+            const d2 = (-k - 0.5 * sigma * sigma * T) / Math.max(sigma * sqrtT, 1e-9);
+            const d1 = d2 + sigma * sqrtT;
+            const pdf = Math.exp(-d2 * d2 / 2) / Math.sqrt(2 * Math.PI);
+            const sign = side === 'CALL' ? 1 : -1;
+            const delta = sign * pdf / Math.max(F * sigma * sqrtT, 1e-9) * size;
+            const vega  = sign * (-d1 * pdf / Math.max(sigma, 1e-9)) * 0.01 * size;     // per 1 vol pt
+            const theta = sign * (-pdf * (k / (2 * T) + (sigma * d1) / (2 * sqrtT))) / 365 * size; // per day
+            return (
+              <div className="calc-result">
+                <span className="k">Forward</span><span className="v">${result.F.toFixed(2)}</span>
+                <span className="k">Days to expiry</span><span className="v">{(result.T * 365).toFixed(2)}d</span>
+                <span className="k">log-moneyness k</span><span className="v">{result.k.toFixed(4)}</span>
+                <span className="k">IV at strike</span><span className="v">{(result.sigma * 100).toFixed(2)}%</span>
+                <span className="k">P(in the money)</span><span className="v">{(result.probInTheMoney * 100).toFixed(2)}%</span>
+                <div className="sep-row" />
+                <span className="k">Cost (approx)</span><span className="v big">{result.cost.toFixed(2)} dUSDC</span>
+                <span className="k">Max payout</span><span className="v green">{result.maxPayout.toFixed(2)} dUSDC</span>
+                <span className="k">Max profit</span><span className="v green">+{result.profit.toFixed(2)}</span>
+                <span className="k">Max loss</span><span className="v red">-{result.cost.toFixed(2)}</span>
+                <div className="sep-row" />
+                <span className="k">Δ delta</span><span className="v">{delta.toFixed(4)} per $1 BTC</span>
+                <span className="k">ν vega</span><span className="v">{vega.toFixed(4)} per 1 vol pt</span>
+                <span className="k">Θ theta</span><span className="v">{theta.toFixed(4)} per day</span>
+              </div>
+            );
+          })()}
 
           <p style={{ marginTop: 14, fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.5 }}>
             Estimate uses Black-Scholes digital pricing against the live SVI surface. Real DeepBook quotes include the protocol's vault spread on top, so actual cost is typically a few % higher. For exact pricing, call <code style={{ fontSize: 10 }}>predict::get_trade_amounts</code>.
