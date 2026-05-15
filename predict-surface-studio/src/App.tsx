@@ -8,7 +8,10 @@ import MultiSmilePlot from './components/MultiSmilePlot';
 import TermStructurePlot from './components/TermStructurePlot';
 import ActivityFeed from './components/ActivityFeed';
 import MarketsTable from './components/MarketsTable';
-import { TabsTop, TabsBottom, TabKey } from './components/TabNav';
+import CalculatorSheet from './components/CalculatorSheet';
+import AboutModal from './components/AboutModal';
+import Toasts from './components/Toasts';
+import { TabsTop, TabsBottom, TabKey, TABS } from './components/TabNav';
 import { fetchSurface, snapshotsFromSurface, SviSnapshot, SurfaceResponse } from './lib/predictApi';
 import { iv as sviIv } from './lib/sviMath';
 
@@ -19,8 +22,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>(() => {
     const h = (typeof location !== 'undefined' && location.hash.slice(1)) || 'surface';
-    return (['surface', 'smile', 'term', 'activity', 'markets'].includes(h) ? h : 'surface') as TabKey;
+    return (TABS.some((t) => t.key === h) ? h : 'surface') as TabKey;
   });
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,6 +48,21 @@ export default function App() {
     if (typeof location !== 'undefined') location.hash = tab;
   }, [tab]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (e.key === 'Escape') { setCalcOpen(false); setAboutOpen(false); return; }
+      if (e.key === 'c' || e.key === 'C') { setCalcOpen((v) => !v); return; }
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) { setAboutOpen((v) => !v); return; }
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= TABS.length) setTab(TABS[num - 1].key);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Cursor-follow on glow cards
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
@@ -57,6 +77,10 @@ export default function App() {
   }, []);
 
   const current = oracles[idx];
+  const atmIv = current ? (() => {
+    const T = current.expirySec ? Math.max(current.expirySec - Date.now() / 1000, 60) / (365 * 86400) : 1 / 12;
+    return sviIv(current.svi, 0, T);
+  })() : 0;
 
   return (
     <div className="app">
@@ -79,10 +103,18 @@ export default function App() {
           ) : (
             <span className="live-badge"><span className="live-dot" /> connecting...</span>
           )}
+          <div className="header-actions">
+            <button className="icon-btn primary" onClick={() => setCalcOpen(true)} title="Open calculator (C)">🧮 calc</button>
+            <button className="icon-btn" onClick={() => setAboutOpen(true)} title="About (?)">?</button>
+          </div>
+        </div>
+        {/* mobile actions */}
+        <div className="header-actions" style={{ display: 'flex' }}>
+          <button className="icon-btn primary" onClick={() => setCalcOpen(true)} title="Calculator">🧮</button>
+          <button className="icon-btn" onClick={() => setAboutOpen(true)} title="About">?</button>
         </div>
       </header>
 
-      {/* mobile stat strip */}
       <div className="stats-strip">
         {error ? <span className="pill" style={{ color: 'var(--bad)' }}>{error}</span> : (
           <>
@@ -90,10 +122,7 @@ export default function App() {
             {surface && <span className="pill">BTC <strong>${surface.primary.forward.toFixed(0)}</strong></span>}
             {surface && <span className="pill"><strong>{oracles.length}</strong> oracles</span>}
             {surface && <span className={'pill source-pill ' + surface.source}>{surface.source}</span>}
-            {current && (() => {
-              const T = current.expirySec ? Math.max(current.expirySec - Date.now() / 1000, 60) / (365 * 86400) : 1/12;
-              return <span className="pill">ATM <strong>{(sviIv(current.svi, 0, T) * 100).toFixed(1)}%</strong></span>;
-            })()}
+            {current && <span className="pill">ATM <strong>{(atmIv * 100).toFixed(1)}%</strong></span>}
           </>
         )}
       </div>
@@ -105,11 +134,24 @@ export default function App() {
       </main>
 
       <TabsBottom active={tab} onChange={setTab} />
+
+      {calcOpen && oracles.length > 0 && (
+        <CalculatorSheet
+          oracles={oracles}
+          selectedIdx={idx}
+          onSelect={setIdx}
+          onClose={() => setCalcOpen(false)}
+        />
+      )}
+
+      {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
+
+      <Toasts />
     </div>
   );
 }
 
-function TabPanel({ tab, oracles, surface, current, idx, setIdx }: any) {
+function TabPanel({ tab, oracles, current, idx, setIdx }: any) {
   if (tab === 'surface') {
     return (
       <div className="tab-panel layout-surface">
