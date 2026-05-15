@@ -86,7 +86,6 @@ export default function App() {
           <div className="mark">σ</div>
           <div>
             <div className="brand-name">Predict Quant Suite</div>
-            <div className="brand-sub">DeepBook Predict · Sui</div>
           </div>
         </a>
         <div className="nav-actions">
