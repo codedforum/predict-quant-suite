@@ -221,6 +221,81 @@ app.get('/api/oracle/:id', async (req, res) => {
   }
 });
 
+// 24h leaderboard - top managers by sum of redeemed payouts.
+let lbCache = { data: null, ts: 0 };
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    if (Date.now() - lbCache.ts < 60_000 && lbCache.data) return res.json({ ...lbCache.data, cache: 'hit' });
+    if (!PKG) throw new Error('PREDICT_PKG not set');
+    const since = Date.now() - 24 * 3600_000;
+    const [redeems, mints] = await Promise.all([
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::PositionRedeemed` }, limit: 50, order: 'descending' }),
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::PositionMinted` },   limit: 50, order: 'descending' }),
+    ]);
+    const inWindow = (ev) => Number(ev.timestampMs) >= since;
+    const byMgr = new Map();
+    for (const ev of redeems.data.filter(inWindow)) {
+      const mgr = ev.parsedJson?.manager_id;
+      if (!mgr) continue;
+      const e = byMgr.get(mgr) || { manager: mgr, payout: 0, wins: 0, mints: 0, cost: 0 };
+      e.payout += Number(ev.parsedJson?.payout || 0) / 1e6;
+      e.wins  += 1;
+      byMgr.set(mgr, e);
+    }
+    for (const ev of mints.data.filter(inWindow)) {
+      const mgr = ev.parsedJson?.manager_id;
+      if (!mgr) continue;
+      const e = byMgr.get(mgr) || { manager: mgr, payout: 0, wins: 0, mints: 0, cost: 0 };
+      e.cost  += Number(ev.parsedJson?.cost   || 0) / 1e6;
+      e.mints += 1;
+      byMgr.set(mgr, e);
+    }
+    const ranked = Array.from(byMgr.values()).map((e) => ({
+      ...e, net: e.payout - e.cost,
+    })).sort((a, b) => b.payout - a.payout).slice(0, 12);
+    const out = { ts: Date.now(), traders: ranked.length, top: ranked };
+    lbCache = { data: out, ts: Date.now() };
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
+// Backtest: simulate "trade every spread that exceeds edge threshold for N seconds, take PnL when revert toward predict".
+app.get('/api/backtest', (req, res) => {
+  const minEdge = parseFloat(req.query.minEdge || process.env.MIN_EDGE_VOL || '0.04');
+  const sizePerTrade = parseFloat(req.query.size || '100');
+  const quotes = recentQuotes(2000);
+  let pnl = 0; let trades = 0; let wins = 0;
+  let openSide = null; let openIv = null; let openIdx = -1;
+  const series = [];
+  for (let i = 0; i < quotes.length; i++) {
+    const q = quotes[i];
+    if (!Number.isFinite(q.predictIv) || !Number.isFinite(q.polyIv) || !q.polyIv) {
+      series.push({ ts: q.ts, pnl });
+      continue;
+    }
+    const edge = q.polyIv - q.predictIv;
+    if (openSide === null && Math.abs(edge) >= minEdge) {
+      openSide = edge > 0 ? 'buy' : 'sell';
+      openIv = q.predictIv;
+      openIdx = i;
+    } else if (openSide !== null) {
+      const moved = q.predictIv - openIv;
+      const pnlSign = openSide === 'buy' ? 1 : -1;
+      const tradePnl = pnlSign * moved * sizePerTrade * 100;
+      // Close after 4 ticks or when edge inverts
+      const ticksHeld = i - openIdx;
+      const newEdge = q.polyIv - q.predictIv;
+      const inverted = (openSide === 'buy' && newEdge < 0) || (openSide === 'sell' && newEdge > 0);
+      if (ticksHeld >= 4 || inverted) {
+        pnl += tradePnl; trades += 1; if (tradePnl > 0) wins += 1;
+        openSide = null; openIv = null; openIdx = -1;
+      }
+    }
+    series.push({ ts: q.ts, pnl });
+  }
+  res.json({ minEdge, sizePerTrade, trades, wins, finalPnl: pnl, hitRate: trades ? wins / trades : 0, series });
+});
+
 // Live arb opportunities (computed on the fly from latest spread + edge threshold).
 app.get('/api/opportunities', (req, res) => {
   const minEdge = parseFloat(req.query.minEdge || process.env.MIN_EDGE_VOL || '0.04');

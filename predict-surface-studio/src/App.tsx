@@ -16,6 +16,9 @@ import TGBotCard from './components/TGBotCard';
 import VaultCard from './components/VaultCard';
 import Heatmap2D from './components/Heatmap2D';
 import OracleDrilldown from './components/OracleDrilldown';
+import LeaderboardCard from './components/LeaderboardCard';
+import StrikeGrid from './components/StrikeGrid';
+import BacktestChart from './components/BacktestChart';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -232,6 +235,10 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
             <VolArbPlot />
           </div>
         </section>
+        <section className="card">
+          <div className="card-head"><h2>Strategy backtest</h2><span className="meta">simulate signals on the spread history</span></div>
+          <BacktestChart />
+        </section>
         <div className="two-col">
           <section className="card">
             <div className="card-head"><h2>Live opportunities</h2><span className="meta">edge above threshold</span></div>
@@ -258,12 +265,16 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
 
   if (tab === 'activity') {
     return (
-      <div className="tab-panel">
-        <section className="card tall" style={{ minHeight: 520 }}>
+      <div className="tab-panel two-col">
+        <section className="card tall" style={{ minHeight: 480 }}>
           <div className="card-head"><h2>On-chain activity</h2><span className="meta">recent Predict events</span></div>
           <div className="card-body card-body-flex" style={{ padding: 0 }}>
             <ActivityFeed />
           </div>
+        </section>
+        <section className="card">
+          <div className="card-head"><h2>24h Leaderboard</h2><span className="meta">top managers by payout</span></div>
+          <LeaderboardCard />
         </section>
       </div>
     );
@@ -272,10 +283,19 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
   if (tab === 'markets') {
     return (
       <div className="tab-panel">
-        <section className="card tall" style={{ minHeight: 520 }}>
+        <section className="card tall">
           <div className="card-head"><h2>Markets</h2><span className="meta">click row to select</span></div>
           <div className="card-body card-body-flex" style={{ padding: 0 }}>
             {oracles.length ? <MarketsTable oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : skel}
+          </div>
+        </section>
+        <section className="card tall" style={{ minHeight: 360 }}>
+          <div className="card-head">
+            <h2>Strike chain (selected oracle)</h2>
+            <span className="meta">{current ? current.oracleId.slice(0, 14) + '...' : '-'}</span>
+          </div>
+          <div className="card-body card-body-flex" style={{ padding: 0 }}>
+            {current ? <StrikeGrid snapshot={current} /> : skel}
           </div>
         </section>
       </div>
