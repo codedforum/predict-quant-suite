@@ -104,34 +104,58 @@ button, input, select { font-family: inherit; }
 @keyframes orbFloat2 { from { transform: translate(0, 0) scale(1); } to { transform: translate(-100px, 40px) scale(1.05); } }
 @keyframes orbFloat3 { from { transform: translate(0, 0) scale(1); } to { transform: translate(60px, -80px) scale(1.08); } }
 
-/* Floating Sui drop silhouettes */
-.sui-drops {
+/* Floating brand marks (Sui drops + DeepBook plates) */
+.bg-marks {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   overflow: hidden;
 }
-.sui-drop {
+.bg-mark {
   position: absolute;
-  width: 32px; height: 40px;
-  opacity: 0.06;
-  animation: dropFloat 22s linear infinite, dropSpin 18s linear infinite;
-  fill: var(--sui-blue);
+  top: var(--y); left: var(--x);
+  width: 36px; height: 44px;
+  opacity: 0.05;
+  color: var(--sui-blue);
+  animation:
+    markDrift var(--f, 22s) ease-in-out infinite,
+    markSpin var(--r, 20s) linear infinite;
+  animation-delay: var(--d, 0s), calc(var(--d, 0s) * -0.5);
+  will-change: transform;
 }
-.sui-drop:nth-child(1)  { top: 12%; left:  8%; animation-delay: 0s,  0s; }
-.sui-drop:nth-child(2)  { top: 24%; left: 78%; animation-delay: 4s, -3s; transform: scale(1.4); }
-.sui-drop:nth-child(3)  { top: 58%; left: 18%; animation-delay: 8s, -6s; transform: scale(0.8); }
-.sui-drop:nth-child(4)  { top: 72%; left: 84%; animation-delay: 2s, -9s; transform: scale(1.6); }
-.sui-drop:nth-child(5)  { top: 38%; left: 46%; animation-delay: 12s, -2s; transform: scale(0.6); }
-.sui-drop:nth-child(6)  { top: 88%; left: 32%; animation-delay: 6s, -7s; transform: scale(1.2); }
-.sui-drop:nth-child(7)  { top:  6%; left: 60%; animation-delay: 10s, -4s; transform: scale(0.9); }
-.sui-drop:nth-child(8)  { top: 50%; left: 92%; animation-delay: 14s, -10s; transform: scale(1.1); }
-@keyframes dropFloat {
-  0%   { transform: translateY(0); }
-  50%  { transform: translateY(-30px); }
-  100% { transform: translateY(0); }
+.bg-mark.sui-drop { color: var(--sui-blue-light); }
+.bg-mark.deepbook-mark { color: var(--sui-blue); width: 56px; height: 56px; opacity: 0.045; }
+.bg-mark.big { transform: scale(1.6); opacity: 0.07; }
+.bg-mark.sm { transform: scale(0.7); opacity: 0.04; }
+@keyframes markDrift {
+  0%   { translate: 0 0; }
+  25%  { translate: -20px -30px; }
+  50%  { translate: 30px -50px; }
+  75%  { translate: -10px -20px; }
+  100% { translate: 0 0; }
 }
-@keyframes dropSpin {
+@keyframes markSpin {
   from { rotate: 0deg; }
   to   { rotate: 360deg; }
+}
+
+/* Crepuscular rays - very subtle Sui-blue light shafts from top */
+.bg-rays {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    conic-gradient(from 200deg at 50% -20%,
+      transparent 0deg,
+      rgba(41, 141, 255, 0.04) 30deg,
+      transparent 60deg,
+      rgba(92, 169, 255, 0.05) 90deg,
+      transparent 120deg,
+      rgba(41, 141, 255, 0.03) 150deg,
+      transparent 180deg);
+  mix-blend-mode: screen;
+  animation: raysSweep 40s linear infinite;
+  transform-origin: 50% 0%;
+}
+@keyframes raysSweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* Subtle scan-line shimmer across the page */

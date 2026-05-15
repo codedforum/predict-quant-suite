@@ -20,22 +20,37 @@
     <div class="bg-orb orb-1"></div>
     <div class="bg-orb orb-2"></div>
     <div class="bg-orb orb-3"></div>
-    <svg class="sui-drops" xmlns="http://www.w3.org/2000/svg">
+    <svg class="bg-marks" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <symbol id="sui-drop" viewBox="0 0 32 40">
           <path d="M16 1 C 16 1 4 16 4 26 a 12 12 0 0 0 24 0 c 0 -10 -12 -25 -12 -25 z M 16 9 C 16 9 22 17 22 24 a 6 6 0 0 1 -12 0 c 0 -7 6 -15 6 -15 z" fill="currentColor"/>
         </symbol>
+        <symbol id="deepbook-mark" viewBox="0 0 64 64">
+          <rect x="6" y="14" width="52" height="36" rx="4" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="6" y1="26" x2="58" y2="26" stroke="currentColor" stroke-width="2.5"/>
+          <line x1="22" y1="14" x2="22" y2="50" stroke="currentColor" stroke-width="2.5"/>
+          <line x1="42" y1="14" x2="42" y2="50" stroke="currentColor" stroke-width="2.5"/>
+          <circle cx="14" cy="38" r="2.5" fill="currentColor"/>
+          <circle cx="32" cy="38" r="2.5" fill="currentColor"/>
+          <circle cx="50" cy="38" r="2.5" fill="currentColor"/>
+        </symbol>
       </defs>
-      <use class="sui-drop" href="#sui-drop" />
-      <use class="sui-drop" href="#sui-drop" />
-      <use class="sui-drop" href="#sui-drop" />
-      <use class="sui-drop" href="#sui-drop" />
-      <use class="sui-drop" href="#sui-drop" />
-      <use class="sui-drop" href="#sui-drop" />
-      <use class="sui-drop" href="#sui-drop" />
-      <use class="sui-drop" href="#sui-drop" />
+      <use class="bg-mark sui-drop" href="#sui-drop" style="--x: 8%; --y: 12%; --d: 0s; --r: 18s; --f: 22s;" />
+      <use class="bg-mark sui-drop big" href="#sui-drop" style="--x: 78%; --y: 24%; --d: 4s; --r: 24s; --f: 26s;" />
+      <use class="bg-mark sui-drop sm" href="#sui-drop" style="--x: 18%; --y: 58%; --d: 8s; --r: 16s; --f: 20s;" />
+      <use class="bg-mark sui-drop big" href="#sui-drop" style="--x: 84%; --y: 72%; --d: 2s; --r: 28s; --f: 24s;" />
+      <use class="bg-mark sui-drop sm" href="#sui-drop" style="--x: 46%; --y: 38%; --d: 12s; --r: 22s; --f: 18s;" />
+      <use class="bg-mark sui-drop" href="#sui-drop" style="--x: 32%; --y: 88%; --d: 6s; --r: 20s; --f: 28s;" />
+      <use class="bg-mark sui-drop sm" href="#sui-drop" style="--x: 60%; --y: 6%; --d: 10s; --r: 14s; --f: 22s;" />
+      <use class="bg-mark sui-drop" href="#sui-drop" style="--x: 92%; --y: 50%; --d: 14s; --r: 26s; --f: 26s;" />
+      <use class="bg-mark deepbook-mark" href="#deepbook-mark" style="--x: 14%; --y: 42%; --d: 3s; --r: 30s; --f: 32s;" />
+      <use class="bg-mark deepbook-mark big" href="#deepbook-mark" style="--x: 70%; --y: 84%; --d: 9s; --r: 36s; --f: 38s;" />
+      <use class="bg-mark deepbook-mark sm" href="#deepbook-mark" style="--x: 50%; --y: 14%; --d: 5s; --r: 28s; --f: 30s;" />
+      <use class="bg-mark deepbook-mark" href="#deepbook-mark" style="--x: 24%; --y: 76%; --d: 11s; --r: 34s; --f: 34s;" />
+      <use class="bg-mark deepbook-mark sm" href="#deepbook-mark" style="--x: 88%; --y: 32%; --d: 7s; --r: 32s; --f: 36s;" />
     </svg>
     <div class="bg-shimmer"></div>
+    <div class="bg-rays"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
