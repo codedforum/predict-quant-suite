@@ -740,6 +740,56 @@ h1, h2, h3, h4 { font-family: var(--sg); margin: 0; font-weight: 700; letter-spa
 .oracle-id-link { cursor: pointer; transition: color 0.15s; }
 .oracle-id-link:hover { color: var(--accent); }
 
+/* ============ Leaderboard ============ */
+.lb-hero {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, rgba(255,107,0,.08), rgba(251,191,36,.04));
+  border-bottom: 1px solid var(--border);
+}
+.lb-hero-rank {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: grid; place-items: center;
+  font-family: var(--sg); font-weight: 800; font-size: 22px; color: #1a0d00;
+  background: linear-gradient(135deg, var(--orange), var(--yellow));
+  box-shadow: 0 4px 14px rgba(255,107,0,.35);
+}
+.lb-hero-mgr { font-family: var(--mono); font-size: 13px; color: var(--t1); margin-bottom: 6px; }
+.lb-hero-stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--t2); }
+.lb-hero-stats .num { color: var(--t1); }
+.lb-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.lb-table th { text-align: left; padding: 12px 16px; font-family: var(--inter); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t2); font-weight: 600; border-bottom: 1px solid var(--border-2); background: var(--card); }
+.lb-table td { padding: 11px 16px; border-bottom: 1px solid var(--border); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.lb-table tbody tr:hover { background: var(--glass); }
+
+/* ============ Strike grid (options chain) ============ */
+.strike-grid-wrap { height: 100%; display: flex; flex-direction: column; }
+.strike-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
+.strike-table th {
+  position: sticky; top: 0; background: var(--card); z-index: 1;
+  padding: 10px 12px; font-family: var(--inter); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--border-2);
+}
+.strike-table th.grp-call { color: var(--green); text-align: right; }
+.strike-table th.grp-put  { color: var(--red); text-align: left; }
+.strike-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; text-align: right; color: var(--t1); }
+.strike-table td.center { text-align: center; }
+.strike-table td.accent {
+  background: linear-gradient(90deg, transparent, rgba(251,191,36,.04));
+  color: var(--yellow); font-weight: 600;
+}
+.strike-table tr.atm-row td { background: rgba(251,191,36,.06); }
+.strike-table tr.atm-row td.center { color: var(--accent); font-weight: 700; }
+.atm-tag { font-family: var(--mono); font-size: 9px; color: var(--accent); margin-left: 4px; padding: 1px 4px; border: 1px solid var(--accent); border-radius: 3px; }
+
+/* ============ Backtest ============ */
+.bt-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 700px) { .bt-stats { grid-template-columns: repeat(4, 1fr); } }
+.bt-stat { background: var(--glass); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.bt-stat .ds-label { font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.bt-stat .ds-value { font-family: var(--sg); font-weight: 800; font-size: 18px; color: var(--t1); font-variant-numeric: tabular-nums; margin-top: 4px; }
+
 /* ============ TG bot card ============ */
 .tg-cmds { display: flex; flex-direction: column; gap: 6px; }
 .tg-cmd {

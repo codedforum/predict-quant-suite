@@ -101,6 +101,31 @@ export async function fetchVault(): Promise<Vault | null> {
   } catch { return null; }
 }
 
+export interface LeaderboardRow {
+  manager: string; payout: number; wins: number; mints: number; cost: number; net: number;
+}
+export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
+  try {
+    const r = await fetch(`${API_BASE}/api/leaderboard`, { cache: 'no-store' });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return j.top ?? [];
+  } catch { return []; }
+}
+
+export interface BacktestPoint { ts: number; pnl: number }
+export interface BacktestResult {
+  minEdge: number; sizePerTrade: number; trades: number; wins: number;
+  finalPnl: number; hitRate: number; series: BacktestPoint[];
+}
+export async function fetchBacktest(): Promise<BacktestResult | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/backtest`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
 export interface OracleDrill {
   oracleId: string;
   expiry_ms: number;

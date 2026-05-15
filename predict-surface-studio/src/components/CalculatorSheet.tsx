@@ -11,7 +11,7 @@ function normCdf(x: number): number {
   return 0.5 * (1.0 + sign * y);
 }
 
-type Side = 'CALL' | 'PUT';
+type Side = 'CALL' | 'PUT' | 'RANGE';
 
 export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClose }: {
   oracles: SviSnapshot[];
@@ -21,6 +21,7 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
 }) {
   const oracle = oracles[selectedIdx];
   const [strike, setStrike] = useState(() => oracle ? Math.round(oracle.forward / 1000) * 1000 : 80000);
+  const [strikeUpper, setStrikeUpper] = useState(() => oracle ? Math.round(oracle.forward / 1000) * 1000 + 2000 : 82000);
   const [size, setSize] = useState(100);
   const [side, setSide] = useState<Side>('CALL');
 
@@ -30,22 +31,36 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
     const T = oracle.expirySec
       ? Math.max(oracle.expirySec - Date.now() / 1000, 60) / (365 * 86400)
       : 1 / 12;
+    const sqrtT = Math.sqrt(T);
     const k = Math.log(strike / F);
     const sigma = iv(oracle.svi, k, T);
-    const sqrtT = Math.sqrt(T);
     const d2 = (-k - 0.5 * sigma * sigma * T) / Math.max(sigma * sqrtT, 1e-9);
     const digitalCall = normCdf(d2);
+
+    if (side === 'RANGE') {
+      // Vertical range pays $1 if S_T in (lower, upper). Pricing = digital(lower) - digital(upper)
+      const lo = Math.min(strike, strikeUpper);
+      const hi = Math.max(strike, strikeUpper);
+      const kLo = Math.log(lo / F), kHi = Math.log(hi / F);
+      const sigLo = iv(oracle.svi, kLo, T);
+      const sigHi = iv(oracle.svi, kHi, T);
+      const d2Lo = (-kLo - 0.5 * sigLo * sigLo * T) / Math.max(sigLo * sqrtT, 1e-9);
+      const d2Hi = (-kHi - 0.5 * sigHi * sigHi * T) / Math.max(sigHi * sqrtT, 1e-9);
+      const probInRange = normCdf(d2Lo) - normCdf(d2Hi);
+      return {
+        sigma, probInTheMoney: probInRange, cost: probInRange * size,
+        maxPayout: size, profit: size - probInRange * size,
+        T, F, k, kLo, kHi, lo, hi, isRange: true,
+      };
+    }
+
     const probInTheMoney = side === 'CALL' ? digitalCall : 1 - digitalCall;
-    const cost = probInTheMoney * size;
-    const maxPayout = size;
-    const breakeven = side === 'CALL'
-      ? F * Math.exp(-sigma * sqrtT * (-normInverse(cost / size)))
-      : F * Math.exp( sigma * sqrtT * (-normInverse(cost / size)));
     return {
-      sigma, probInTheMoney, cost, maxPayout, profit: maxPayout - cost,
-      breakeven, T, F, k,
+      sigma, probInTheMoney, cost: probInTheMoney * size,
+      maxPayout: size, profit: size - probInTheMoney * size,
+      T, F, k, isRange: false,
     };
-  }, [oracle, strike, size, side]);
+  }, [oracle, strike, strikeUpper, size, side]);
 
   function normInverse(p: number): number {
     if (p <= 0) return -8;
@@ -86,15 +101,23 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
           <div className="field">
             <label>Side</label>
             <div className="toggle-group">
-              <button className={side === 'CALL' ? 'active' : ''} onClick={() => setSide('CALL')}>CALL (BTC up)</button>
-              <button className={side === 'PUT' ? 'active' : ''} onClick={() => setSide('PUT')}>PUT (BTC down)</button>
+              <button className={side === 'CALL'  ? 'active' : ''} onClick={() => setSide('CALL')}>CALL</button>
+              <button className={side === 'PUT'   ? 'active' : ''} onClick={() => setSide('PUT')}>PUT</button>
+              <button className={side === 'RANGE' ? 'active' : ''} onClick={() => setSide('RANGE')}>RANGE</button>
             </div>
           </div>
 
           <div className="field">
-            <label>Strike (USD)</label>
+            <label>{side === 'RANGE' ? 'Lower strike (USD)' : 'Strike (USD)'}</label>
             <input type="number" value={strike} step="500" onChange={(e) => setStrike(parseFloat(e.target.value) || 0)} />
           </div>
+
+          {side === 'RANGE' && (
+            <div className="field">
+              <label>Upper strike (USD)</label>
+              <input type="number" value={strikeUpper} step="500" onChange={(e) => setStrikeUpper(parseFloat(e.target.value) || 0)} />
+            </div>
+          )}
 
           <div className="field">
             <label>Size (dUSDC max payout)</label>
