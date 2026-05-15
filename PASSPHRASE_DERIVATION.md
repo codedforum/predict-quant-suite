@@ -1,41 +1,37 @@
-# Secret Derivation
+# Encryption keys
 
-Each service in this repo uses its own encryption key, but you only have to remember one root secret. The per-service keys are derived from it deterministically.
+Each service that needs an encryption key (currently only `predict-tg-bot`) holds it in its own `.env` file, chmod 600, gitignored.
 
-## Root secret
-- File: `~/.sui-overflow/keystore.json` (chmod 600)
-- Contains the bech32 `secretKeyBech32` for the Sui wallet
-- This is the only secret you need to back up
+## Current state
 
-## Derivation rule
-```
-WALLET_ENC_KEY = sha256( secretKeyBech32 + ":" + serviceName )    // 64 hex chars
-```
+| Service | Key | Source |
+|---|---|---|
+| `predict-tg-bot` | `WALLET_ENC_KEY` | Random 32-byte hex generated locally and never crosses stdout |
+| `predict-vol-arb` | n/a | Doesn't encrypt anything; signs with the keystore directly |
+| `predict-surface-studio` | n/a | Read-only frontend, no signing |
 
-| Service | Salt |
-|---|---|
-| `predict-tg-bot` | `predict-tg-bot` |
-| `predict-vol-arb` | `predict-vol-arb` |
-
-## Recompute
-
-Shell:
-```
-SECRET=$(python3 -c "import json; print(json.load(open('$HOME/.sui-overflow/keystore.json'))['secretKeyBech32'])")
-echo -n "${SECRET}:predict-tg-bot" | shasum -a 256 | awk '{print $1}'
-```
-
-Node:
-```
-crypto.createHash('sha256').update(secret + ':' + service).digest('hex')
+## Generating a fresh tg-bot key (rotation)
+```bash
+node -e "
+const fs = require('node:fs');
+const crypto = require('node:crypto');
+const p = '/Users/smartcoded2011/sui-overflow/predict-tg-bot/.env';
+let s = fs.readFileSync(p, 'utf8');
+s = s.replace(/^WALLET_ENC_KEY=.*$/m, 'WALLET_ENC_KEY=' + crypto.randomBytes(32).toString('hex'));
+fs.writeFileSync(p, s);
+fs.chmodSync(p, 0o600);
+console.log('rotated, new key length 64 hex chars (not printed)');
+"
 ```
 
-## Why
-Reusing a single secret across services means one leaked `.env` compromises every other service. Per-service derivation gives you the same memorability (one root secret) while keeping each service's stored key unique and one-way: a leaked `.env` reveals only that service's derived key, never the root, and never any other service.
+After rotation, any user wallet stored in the bot's sqlite DB before the rotation becomes unrecoverable. Only safe to rotate before the bot has live users, or with a planned re-encrypt-DB migration.
 
-## Rotation
-If the root secret is exposed:
-1. Generate a new keypair
-2. Move funds from old address to new address
-3. Re-derive all service keys with the new root + same salts
-4. Update each `.env`
+## Why a random key, not a derivation
+Earlier we used `sha256(walletSecret + ":" + serviceName)` so one root secret could re-derive all per-service keys. That formula was a real value-add when there were multiple services using shared secrets, but in this repo only one service needs an encryption key, so the simpler "fresh random per service, written once, backed up separately" pattern is enough — and avoids the question of what happens when the root wallet secret is exposed.
+
+## Backup
+The tg-bot key is in `predict-tg-bot/.env`. If the bot has live users, back up:
+- The `.env` file (key)
+- The `predict-bot.db` file (encrypted user wallets)
+
+Together those two files restore every user's funds. Lose either and recovery is gone.
