@@ -99,6 +99,16 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
           </div>
 
           <div className="field">
+            <label>Quick presets</label>
+            <div className="preset-grid">
+              <button className="preset" onClick={() => { if (!oracle) return; setSide('CALL'); setStrike(Math.round(oracle.forward * 1.05 / 100) * 100); setSize(100); }}>BTC up 5%</button>
+              <button className="preset" onClick={() => { if (!oracle) return; setSide('PUT'); setStrike(Math.round(oracle.forward * 0.90 / 100) * 100); setSize(100); }}>BTC down 10%</button>
+              <button className="preset" onClick={() => { if (!oracle) return; setSide('RANGE'); setStrike(Math.round(oracle.forward * 0.97 / 100) * 100); setStrikeUpper(Math.round(oracle.forward * 1.03 / 100) * 100); setSize(100); }}>BTC range ±3%</button>
+              <button className="preset" onClick={() => { if (!oracle) return; setSide('CALL'); setStrike(Math.round(oracle.forward / 100) * 100); setSize(50); }}>ATM coin flip</button>
+            </div>
+          </div>
+
+          <div className="field">
             <label>Side</label>
             <div className="toggle-group">
               <button className={side === 'CALL'  ? 'active' : ''} onClick={() => setSide('CALL')}>CALL</button>

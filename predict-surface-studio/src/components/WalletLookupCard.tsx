@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { fetchPositions, PositionsLookup } from '../lib/predictApi';
+import EquityCurve from './EquityCurve';
 
 export default function WalletLookupCard() {
   const [addr, setAddr] = useState('');
@@ -53,6 +54,7 @@ export default function WalletLookupCard() {
                     <a href={`https://suiscan.xyz/testnet/object/${m.balance_manager_id}`} target="_blank" rel="noreferrer">balance manager ↗</a>
                   )}
                 </div>
+                <EquityCurve managerId={m.id} />
               </div>
             ))
           )}

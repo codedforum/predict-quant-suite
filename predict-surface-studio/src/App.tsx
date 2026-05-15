@@ -24,6 +24,8 @@ import CompareOraclesPanel from './components/CompareOraclesPanel';
 import ScrollSpy from './components/ScrollSpy';
 import LiveTicker from './components/LiveTicker';
 import ProbabilityHistogram from './components/ProbabilityHistogram';
+import VolatilityCone from './components/VolatilityCone';
+import TourMode, { shouldShowTour } from './components/TourMode';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -45,6 +47,11 @@ export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [drillOracle, setDrillOracle] = useState<string | null>(null);
   const [surfaceMode, setSurfaceMode] = useState<'3d' | '2d'>('3d');
+  const [tourOpen, setTourOpen] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowTour()) setTimeout(() => setTourOpen(true), 1500);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +101,7 @@ export default function App() {
           </div>
         </a>
         <div className="nav-actions">
+          <button className="btn btn-ghost" onClick={() => setTourOpen(true)} title="Take tour">Tour</button>
           <button className="btn btn-ghost" onClick={() => setAboutOpen(true)} title="About (?)">About</button>
           <button className="btn btn-primary" onClick={() => setCalcOpen(true)} title="Calculator (C)">Open Calc →</button>
         </div>
@@ -130,6 +138,7 @@ export default function App() {
       )}
       {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
       {drillOracle && <OracleDrilldown oracleId={drillOracle} onClose={() => setDrillOracle(null)} />}
+      <TourMode open={tourOpen} onClose={() => setTourOpen(false)} />
       <Toasts />
     </div>
   );
@@ -225,10 +234,19 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
   if (tab === 'term') {
     return (
       <div className="tab-panel">
-        <section className="card glow tall" style={{ minHeight: 520 }}>
+        <section className="card glow tall" style={{ minHeight: 460 }}>
           <div className="card-head"><h2>Term Structure</h2><span className="meta">ATM · 25Δ call · 25Δ put across days</span></div>
-          <div className="card-body card-body-flex" style={{ minHeight: 460 }}>
+          <div className="card-body card-body-flex" style={{ minHeight: 380 }}>
             {oracles.length ? <TermStructurePlot oracles={oracles} /> : skel}
+          </div>
+        </section>
+        <section className="card glow">
+          <div className="card-head">
+            <h2>Volatility cone (selected oracle)</h2>
+            <span className="meta">realized BTC vol vs Predict implied vol across windows</span>
+          </div>
+          <div className="card-body">
+            {current ? <VolatilityCone oracle={current} /> : skel}
           </div>
         </section>
       </div>
