@@ -142,6 +142,20 @@ export default function SurfaceViewer({ snapshot }: Props) {
     return () => window.removeEventListener('keydown', h);
   }, []);
 
+  function savePng() {
+    const canvas = document.querySelector('.surface-viewer-wrap canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `predict-surface-${snapshot.oracleId.slice(0, 10)}-${Date.now()}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  }
+
   function onPointerMove(e: ThreeEvent<PointerEvent>) {
     if (e.uv) {
       const u = e.uv.x, v = e.uv.y;
@@ -174,6 +188,9 @@ export default function SurfaceViewer({ snapshot }: Props) {
           <button className={'sc-btn ' + (resolution === 'med' ? 'on' : '')} onClick={() => setResolution('med')} title="Medium resolution">M</button>
           <button className={'sc-btn ' + (resolution === 'high' ? 'on' : '')} onClick={() => setResolution('high')} title="High resolution">H</button>
         </div>
+        <div className="sc-group">
+          <button className="sc-btn" onClick={savePng} title="Download PNG">⬇</button>
+        </div>
       </div>
 
       <Canvas
@@ -182,6 +199,7 @@ export default function SurfaceViewer({ snapshot }: Props) {
         style={{ background: 'transparent', touchAction: 'none' }}
         onPointerLeave={onPointerLeave}
         resize={{ debounce: 100 }}
+        gl={{ preserveDrawingBuffer: true }}
       >
         <CameraSetup cameraRef={cameraRef} />
         <ambientLight intensity={0.55} />

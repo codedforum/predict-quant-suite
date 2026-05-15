@@ -125,6 +125,47 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
           </div>
 
           {result && (() => {
+            // Payoff diagram: PnL vs settlement price
+            const F = result.F;
+            const cost = result.cost;
+            const max = result.maxPayout;
+            const span = F * 0.25;
+            const N = 100;
+            const W2 = 360, H2 = 120, MXp = 30, MYp = 14;
+            const points: { s: number; pnl: number }[] = [];
+            for (let i = 0; i < N; i++) {
+              const s = F - span + (2 * span) * (i / (N - 1));
+              let payout = 0;
+              if (side === 'CALL') payout = s > strike ? max : 0;
+              else if (side === 'PUT') payout = s < strike ? max : 0;
+              else { const lo = Math.min(strike, strikeUpper), hi = Math.max(strike, strikeUpper); payout = (s > lo && s < hi) ? max : 0; }
+              points.push({ s, pnl: payout - cost });
+            }
+            const ymin = -cost - 5, ymax = max - cost + 5;
+            const xScale = (s: number) => MXp + ((s - (F - span)) / (2 * span)) * (W2 - MXp * 1.4);
+            const yScale = (v: number) => H2 - MYp - ((v - ymin) / (ymax - ymin)) * (H2 - MYp * 2);
+            const path = 'M' + points.map((p) => `${xScale(p.s).toFixed(1)},${yScale(p.pnl).toFixed(1)}`).join(' L');
+            const yZero = yScale(0);
+            return (
+              <>
+                <div className="payoff">
+                  <svg viewBox={`0 0 ${W2} ${H2}`} className="plot-svg" preserveAspectRatio="none">
+                    <line className="plot-axis" x1={MXp} x2={W2 - MXp * 0.4} y1={H2 - MYp} y2={H2 - MYp} />
+                    <line className="plot-marker" x1={MXp} x2={W2 - MXp * 0.4} y1={yZero} y2={yZero} />
+                    <line className="plot-marker" x1={xScale(F)} x2={xScale(F)} y1={MYp} y2={H2 - MYp} />
+                    <path d={path} className="plot-line l1" />
+                    <text className="plot-label" x={MXp} y={H2 - 2}>${((F - span) / 1000).toFixed(0)}k</text>
+                    <text className="plot-label" x={W2 - MXp * 0.4} y={H2 - 2} textAnchor="end">${((F + span) / 1000).toFixed(0)}k</text>
+                    <text className="plot-label" x={xScale(F) + 3} y={MYp + 8}>F</text>
+                    <text className="plot-label" x={4} y={yScale(max - cost)}>+${(max - cost).toFixed(0)}</text>
+                    <text className="plot-label" x={4} y={yScale(-cost)}>-${cost.toFixed(0)}</text>
+                  </svg>
+                  <div className="payoff-foot">Payoff at expiry vs BTC settlement price</div>
+                </div>
+              </>
+            );
+          })()}
+          {result && (() => {
             // Greeks for binary digital. Approximate via Black-Scholes formulas.
             // d2 = (-k - 0.5 σ² T) / (σ √T)
             // pdf(d2) = exp(-d2²/2) / √(2π)
