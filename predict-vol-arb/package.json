@@ -1,0 +1,19 @@
+{
+  "name": "predict-vol-arb",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bot": "node src/bot.js",
+    "dashboard": "node src/dashboard/server.js",
+    "pm2": "pm2 start ecosystem.config.cjs"
+  },
+  "dependencies": {
+    "@mysten/sui": "^1.13.0",
+    "axios": "^1.7.7",
+    "better-sqlite3": "^11.5.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "ws": "^8.18.0"
+  }
+}
