@@ -1,23 +1,18 @@
-import { Canvas, useThree, useFrame, ThreeEvent } from '@react-three/fiber';
+import { Canvas, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Text, Line } from '@react-three/drei';
 import { useMemo, useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { SviSnapshot } from '../lib/predictApi';
 import { iv } from '../lib/sviMath';
 
-const SURFACE_W = 9;
-const SURFACE_H = 6;
-const Z_SCALE = 28;
-
-// Sui-blue → cyan → green → amber → red heatmap
 function heatColor(t: number): [number, number, number] {
   t = Math.max(0, Math.min(1, t));
   const stops: [number, number, number, number][] = [
-    [0.0,  0.118, 0.431, 0.953],   // sui blue
-    [0.25, 0.36,  0.66,  1.0],     // light blue
-    [0.5,  0.024, 0.71,  0.83],    // cyan
-    [0.75, 0.984, 0.749, 0.141],   // amber
-    [1.0,  0.937, 0.267, 0.267],   // red
+    [0.0,  0.118, 0.431, 0.953],
+    [0.25, 0.36,  0.66,  1.0],
+    [0.5,  0.024, 0.71,  0.83],
+    [0.75, 0.984, 0.749, 0.141],
+    [1.0,  0.937, 0.267, 0.267],
   ];
   for (let i = 1; i < stops.length; i++) {
     if (t <= stops[i][0]) {
@@ -30,29 +25,49 @@ function heatColor(t: number): [number, number, number] {
 }
 
 interface Props { snapshot: SviSnapshot }
-
 interface HoverInfo { strike: number; days: number; ivPct: number; x: number; y: number }
+interface VP { w: number; h: number; isMobile: boolean }
+
+function useViewport(): VP {
+  const [vp, setVp] = useState<VP>({ w: typeof window !== 'undefined' ? window.innerWidth : 1280, h: typeof window !== 'undefined' ? window.innerHeight : 800, isMobile: false });
+  useEffect(() => {
+    const upd = () => setVp({ w: window.innerWidth, h: window.innerHeight, isMobile: window.innerWidth < 700 });
+    upd();
+    window.addEventListener('resize', upd);
+    return () => window.removeEventListener('resize', upd);
+  }, []);
+  return vp;
+}
 
 export default function SurfaceViewer({ snapshot }: Props) {
-  const [autoRotate, setAutoRotate] = useState(true);
+  const vp = useViewport();
+  const [autoRotate, setAutoRotate] = useState(!vp.isMobile);
   const [wireframe, setWireframe] = useState(false);
-  const [resolution, setResolution] = useState<'med' | 'high'>('med');
+  const [resolution, setResolution] = useState<'low' | 'med' | 'high'>('med');
   const [hover, setHover] = useState<HoverInfo | null>(null);
   const cameraRef = useRef<any>(null);
   const controlsRef = useRef<any>(null);
 
-  // Mobile-aware default resolution
+  // Auto-pick safe defaults per viewport
   useEffect(() => {
-    const m = window.matchMedia('(max-width: 700px)').matches;
-    if (m) setResolution('med');
-  }, []);
+    if (vp.isMobile) { setResolution('low'); setAutoRotate(false); }
+    else { setResolution('med'); }
+  }, [vp.isMobile]);
 
-  const STRIKE_BUCKETS = resolution === 'high' ? 80 : 50;
-  const EXPIRY_BUCKETS = resolution === 'high' ? 48 : 28;
-  const STRIKE_STEP_PCT = 16; // strikes from -16% to +16% of forward
+  const STRIKE_BUCKETS = resolution === 'high' ? 80 : resolution === 'med' ? 50 : 32;
+  const EXPIRY_BUCKETS = resolution === 'high' ? 48 : resolution === 'med' ? 28 : 18;
+
+  // Surface size adapts to viewport (smaller on mobile so labels don't overflow)
+  const SURFACE_W = vp.isMobile ? 7 : 9;
+  const SURFACE_H = vp.isMobile ? 5 : 6;
+  const Z_SCALE = vp.isMobile ? 24 : 28;
+  const FOV = vp.isMobile ? 50 : 42;
+  const LABEL_S = vp.isMobile ? 0.42 : 0.32;
+  const STRIKE_STEP_PCT = 16;
   const EXPIRY_DAYS = 180;
-
   const F = snapshot.forward || 79000;
+
+  const defaultCam: [number, number, number] = vp.isMobile ? [10, 9, 10] : [9, 8, 9];
 
   const { geometry, ivMin, ivMax } = useMemo(() => {
     const geo = new THREE.PlaneGeometry(SURFACE_W, SURFACE_H, STRIKE_BUCKETS - 1, EXPIRY_BUCKETS - 1);
@@ -84,35 +99,48 @@ export default function SurfaceViewer({ snapshot }: Props) {
     geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     geo.computeVertexNormals();
     return { geometry: geo, ivMin: lo, ivMax: hi };
-  }, [snapshot, STRIKE_BUCKETS, EXPIRY_BUCKETS]);
+  }, [snapshot, STRIKE_BUCKETS, EXPIRY_BUCKETS, SURFACE_W, SURFACE_H, Z_SCALE]);
 
-  // Strike labels (USD) along X axis
   const strikeLabels = useMemo(() => {
-    const ticks = [-12, -6, 0, 6, 12];
+    const ticks = vp.isMobile ? [-12, 0, 12] : [-12, -6, 0, 6, 12];
     return ticks.map((p) => ({
       x: -SURFACE_W / 2 + ((p + STRIKE_STEP_PCT) / (2 * STRIKE_STEP_PCT)) * SURFACE_W,
       label: `$${(F * (1 + p / 100) / 1000).toFixed(0)}k`,
       isAtm: p === 0,
     }));
-  }, [F]);
+  }, [F, SURFACE_W, vp.isMobile]);
 
-  // Day labels along Z axis
-  const dayTicks = [1, 7, 30, 90, 180];
-  const dayLabels = useMemo(() => dayTicks.map((d) => ({
-    z: -SURFACE_H / 2 + (Math.log(d + 1) / Math.log(EXPIRY_DAYS + 1)) * SURFACE_H,
-    label: d < 30 ? `${d}d` : `${d}d`,
-  })), []);
+  const dayLabels = useMemo(() => {
+    const ticks = vp.isMobile ? [1, 30, 180] : [1, 7, 30, 90, 180];
+    return ticks.map((d) => ({
+      z: -SURFACE_H / 2 + (Math.log(d + 1) / Math.log(EXPIRY_DAYS + 1)) * SURFACE_H,
+      label: `${d}d`,
+    }));
+  }, [SURFACE_H, vp.isMobile]);
 
-  function setCamera(view: 'persp' | 'top' | 'side' | 'front') {
+  function setCamera(view: 'persp' | 'top' | 'side' | 'front' | 'reset') {
     if (!cameraRef.current || !controlsRef.current) return;
     const c = cameraRef.current;
-    if (view === 'persp') c.position.set(9, 8, 9);
-    if (view === 'top')   c.position.set(0, 14, 0.001);
-    if (view === 'side')  c.position.set(13, 4, 0);
-    if (view === 'front') c.position.set(0, 4, 13);
+    const scale = vp.isMobile ? 1.15 : 1;
+    if (view === 'persp' || view === 'reset') c.position.set(9 * scale, 8 * scale, 9 * scale);
+    if (view === 'top')   c.position.set(0, 14 * scale, 0.001);
+    if (view === 'side')  c.position.set(13 * scale, 4 * scale, 0);
+    if (view === 'front') c.position.set(0, 4 * scale, 13 * scale);
     controlsRef.current.target.set(0, 1, 0);
     controlsRef.current.update();
   }
+
+  // Keyboard: R reset view, A toggle auto-rotate, W toggle wireframe (when not in input)
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (e.key === 'r' || e.key === 'R') setCamera('reset');
+      if (e.key === 'a' || e.key === 'A') setAutoRotate((v) => !v);
+      if (e.key === 'w' || e.key === 'W') setWireframe((v) => !v);
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
 
   function onPointerMove(e: ThreeEvent<PointerEvent>) {
     if (e.uv) {
@@ -133,80 +161,75 @@ export default function SurfaceViewer({ snapshot }: Props) {
     <div className="surface-viewer-wrap">
       <div className="surface-controls">
         <div className="sc-group">
-          <button className={'sc-btn'} onClick={() => setCamera('persp')} title="Perspective">⊞</button>
-          <button className={'sc-btn'} onClick={() => setCamera('top')} title="Top-down">⊡</button>
-          <button className={'sc-btn'} onClick={() => setCamera('side')} title="Side">⊟</button>
-          <button className={'sc-btn'} onClick={() => setCamera('front')} title="Front">⊠</button>
+          <button className="sc-btn" onClick={() => setCamera('persp')} title="Perspective">⊞</button>
+          <button className="sc-btn" onClick={() => setCamera('top')} title="Top-down">⊡</button>
+          <button className="sc-btn" onClick={() => setCamera('side')} title="Side">⊟</button>
+          <button className="sc-btn" onClick={() => setCamera('front')} title="Front">⊠</button>
+          <button className="sc-btn" onClick={() => setCamera('reset')} title="Reset (R)">↺</button>
         </div>
         <div className="sc-group">
-          <button className={'sc-btn ' + (autoRotate ? 'on' : '')} onClick={() => setAutoRotate(!autoRotate)} title="Auto-rotate">{autoRotate ? '↻ rotating' : '↻ off'}</button>
-          <button className={'sc-btn ' + (wireframe ? 'on' : '')} onClick={() => setWireframe(!wireframe)} title="Wireframe">⌗ wire</button>
-          <button className={'sc-btn ' + (resolution === 'high' ? 'on' : '')} onClick={() => setResolution(resolution === 'med' ? 'high' : 'med')} title="Resolution">{resolution === 'high' ? 'HD' : 'std'}</button>
+          <button className={'sc-btn ' + (autoRotate ? 'on' : '')} onClick={() => setAutoRotate(!autoRotate)} title="Auto-rotate (A)">↻</button>
+          <button className={'sc-btn ' + (wireframe ? 'on' : '')} onClick={() => setWireframe(!wireframe)} title="Wireframe (W)">⌗</button>
+          <button className={'sc-btn ' + (resolution === 'low' ? 'on' : '')} onClick={() => setResolution('low')} title="Low resolution">L</button>
+          <button className={'sc-btn ' + (resolution === 'med' ? 'on' : '')} onClick={() => setResolution('med')} title="Medium resolution">M</button>
+          <button className={'sc-btn ' + (resolution === 'high' ? 'on' : '')} onClick={() => setResolution('high')} title="High resolution">H</button>
         </div>
       </div>
 
-      <Canvas dpr={[1, 2]} camera={{ position: [9, 8, 9], fov: 42 }} style={{ background: 'transparent' }} onPointerLeave={onPointerLeave}>
+      <Canvas
+        dpr={[1, vp.isMobile ? 1.5 : 2]}
+        camera={{ position: defaultCam, fov: FOV }}
+        style={{ background: 'transparent', touchAction: 'none' }}
+        onPointerLeave={onPointerLeave}
+        resize={{ debounce: 100 }}
+      >
         <CameraSetup cameraRef={cameraRef} />
-
         <ambientLight intensity={0.55} />
         <directionalLight position={[6, 12, 6]} intensity={1.05} />
         <directionalLight position={[-8, 4, -6]} intensity={0.45} color="#5ca9ff" />
         <pointLight position={[0, 8, 0]} intensity={0.4} color="#ffffff" />
 
-        {/* surface */}
-        <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.4, 0]}
-          onPointerMove={onPointerMove}
-        >
+        <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.4, 0]} onPointerMove={onPointerMove}>
           <meshStandardMaterial vertexColors side={THREE.DoubleSide} flatShading={!wireframe} metalness={0.08} roughness={0.55} wireframe={wireframe} />
         </mesh>
 
-        {/* base plane (subtle floor) */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
           <planeGeometry args={[SURFACE_W * 1.6, SURFACE_H * 1.6]} />
           <meshBasicMaterial color="#0a1428" transparent opacity={0.35} />
         </mesh>
 
-        {/* ATM marker line (vertical, at strike=forward, full expiry range) */}
         <Line
           points={[[0, 0.4, -SURFACE_H / 2], [0, ivMax * Z_SCALE + 1.5, -SURFACE_H / 2], [0, ivMax * Z_SCALE + 1.5, SURFACE_H / 2], [0, 0.4, SURFACE_H / 2]]}
           color="#5ca9ff" lineWidth={1.5} dashed dashScale={6}
         />
-        <Text position={[0, ivMax * Z_SCALE + 2.2, 0]} fontSize={0.34} color="#5ca9ff" anchorX="center">ATM ${F.toFixed(0)}</Text>
+        <Text position={[0, ivMax * Z_SCALE + 2.2, 0]} fontSize={LABEL_S * 1.1} color="#5ca9ff" anchorX="center">ATM ${F.toFixed(0)}</Text>
 
-        {/* Strike labels (X axis) */}
         {strikeLabels.map((t, i) => (
-          <group key={i} position={[t.x, 0.42, SURFACE_H / 2 + 0.5]}>
-            <Text fontSize={0.32} color={t.isAtm ? '#5ca9ff' : '#a0a9b1'} anchorX="center" anchorY="top">{t.label}</Text>
-          </group>
+          <Text key={i} position={[t.x, 0.42, SURFACE_H / 2 + 0.5]} fontSize={LABEL_S} color={t.isAtm ? '#5ca9ff' : '#a0a9b1'} anchorX="center" anchorY="top">{t.label}</Text>
         ))}
-        <Text position={[SURFACE_W / 2 + 1.2, 0.42, SURFACE_H / 2 + 0.5]} fontSize={0.26} color="#5a6373" anchorX="left">strike →</Text>
 
-        {/* Day labels (Z axis) */}
         {dayLabels.map((t, i) => (
-          <group key={i} position={[-SURFACE_W / 2 - 0.6, 0.42, t.z]}>
-            <Text fontSize={0.3} color="#a0a9b1" anchorX="right" anchorY="middle">{t.label}</Text>
-          </group>
+          <Text key={i} position={[-SURFACE_W / 2 - 0.6, 0.42, t.z]} fontSize={LABEL_S * 0.95} color="#a0a9b1" anchorX="right" anchorY="middle">{t.label}</Text>
         ))}
-        <Text position={[-SURFACE_W / 2 - 0.6, 0.42, -SURFACE_H / 2 - 0.6]} fontSize={0.26} color="#5a6373" anchorX="right" anchorY="middle">expiry →</Text>
 
-        {/* IV scale labels (Y axis) */}
-        <Text position={[-SURFACE_W / 2 - 1.5, ivMin * Z_SCALE + 0.7, 0]} fontSize={0.32} color="#5ca9ff" anchorX="right">{(ivMin * 100).toFixed(0)}%</Text>
-        <Text position={[-SURFACE_W / 2 - 1.5, (ivMin + (ivMax - ivMin) / 2) * Z_SCALE + 0.7, 0]} fontSize={0.3} color="#a0a9b1" anchorX="right">{(((ivMin + ivMax) / 2) * 100).toFixed(0)}%</Text>
-        <Text position={[-SURFACE_W / 2 - 1.5, ivMax * Z_SCALE + 0.7, 0]} fontSize={0.32} color="#ef4444" anchorX="right">{(ivMax * 100).toFixed(0)}%</Text>
-        <Text position={[-SURFACE_W / 2 - 1.5, (ivMax * Z_SCALE) / 2 + 1.4, 0]} fontSize={0.26} color="#5a6373" anchorX="right" rotation={[0, 0, Math.PI / 2]}>IV</Text>
+        <Text position={[-SURFACE_W / 2 - 1.5, ivMin * Z_SCALE + 0.7, 0]} fontSize={LABEL_S} color="#5ca9ff" anchorX="right">{(ivMin * 100).toFixed(0)}%</Text>
+        <Text position={[-SURFACE_W / 2 - 1.5, ivMax * Z_SCALE + 0.7, 0]} fontSize={LABEL_S} color="#ef4444" anchorX="right">{(ivMax * 100).toFixed(0)}%</Text>
 
         <OrbitControls
           ref={controlsRef}
           enableDamping
+          dampingFactor={0.08}
           autoRotate={autoRotate}
-          autoRotateSpeed={0.45}
-          minDistance={6}
-          maxDistance={28}
+          autoRotateSpeed={vp.isMobile ? 0.25 : 0.45}
+          minDistance={5}
+          maxDistance={32}
           enablePan={false}
+          rotateSpeed={vp.isMobile ? 0.55 : 0.7}
+          zoomSpeed={vp.isMobile ? 0.55 : 0.8}
+          touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
         />
       </Canvas>
 
-      {/* Color legend */}
       <div className="iv-legend">
         <span style={{ color: '#5ca9ff' }}>{(ivMin * 100).toFixed(0)}%</span>
         <div className="iv-scale-bar" />
@@ -214,7 +237,6 @@ export default function SurfaceViewer({ snapshot }: Props) {
         <span className="iv-legend-label">IV scale</span>
       </div>
 
-      {/* Hover tooltip */}
       {hover && (
         <div className="surface-tooltip" style={{ left: hover.x + 14, top: hover.y - 14 }}>
           <div><span>strike</span> <strong>${hover.strike.toFixed(0)}</strong></div>
@@ -222,6 +244,10 @@ export default function SurfaceViewer({ snapshot }: Props) {
           <div><span>IV</span> <strong style={{ color: '#5ca9ff' }}>{hover.ivPct.toFixed(1)}%</strong></div>
         </div>
       )}
+
+      <div className="kbd-hint">
+        <kbd>R</kbd> reset · <kbd>A</kbd> rotate · <kbd>W</kbd> wire · drag · pinch
+      </div>
     </div>
   );
 }
