@@ -63,6 +63,58 @@ app.get('/api/surface', async (req, res) => {
   }
 });
 
+// 24h rolled-up stats. 60s cache. Aggregates from on-chain events.
+let statsCache = { data: null, ts: 0 };
+app.get('/api/stats', async (req, res) => {
+  try {
+    if (Date.now() - statsCache.ts < 60_000 && statsCache.data) return res.json({ ...statsCache.data, cache: 'hit' });
+    if (!PKG) throw new Error('PREDICT_PKG not set');
+    const since = Date.now() - 24 * 3600_000;
+    const [mints, redeems, settles, supplied] = await Promise.all([
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::PositionMinted` },     limit: 50, order: 'descending' }),
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::PositionRedeemed` },   limit: 50, order: 'descending' }),
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::oracle::OracleSettled` },        limit: 20, order: 'descending' }),
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::Supplied` },            limit: 20, order: 'descending' }),
+    ]);
+    const inWindow = (ev) => Number(ev.timestampMs) >= since;
+    const mintsW   = mints.data.filter(inWindow);
+    const redeemsW = redeems.data.filter(inWindow);
+    const settlesW = settles.data.filter(inWindow);
+    const suppliedW = supplied.data.filter(inWindow);
+    const sum = (arr, k) => arr.reduce((s, ev) => s + Number(ev.parsedJson?.[k] || 0), 0);
+    const biggestRedeem = redeemsW.reduce((best, ev) => {
+      const p = Number(ev.parsedJson?.payout || 0);
+      return p > (best?.payout || 0) ? { payout: p, ev: ev.parsedJson } : best;
+    }, null);
+    const out = {
+      ts: Date.now(),
+      window_h: 24,
+      mints:    mintsW.length,
+      redeems:  redeemsW.length,
+      settled:  settlesW.length,
+      supplied: suppliedW.length,
+      mint_volume_dusdc:    sum(mintsW,   'cost')    / 1e6,
+      payout_volume_dusdc:  sum(redeemsW, 'payout')  / 1e6,
+      supplied_volume_dusdc: sum(suppliedW, 'amount') / 1e6,
+      biggest_payout: biggestRedeem ? {
+        payout_dusdc: biggestRedeem.payout / 1e6,
+        side: biggestRedeem.ev?.is_up ? 'CALL' : 'PUT',
+        strike: Number(biggestRedeem.ev?.strike || 0) / 1e9,
+      } : null,
+    };
+    statsCache = { data: out, ts: Date.now() };
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) {
+    res.status(503).json({ error: e.message });
+  }
+});
+
+// Spread series for the vol-arb chart. Pulls recent quotes from sqlite (bot's loop already writes).
+app.get('/api/spread', (req, res) => {
+  const quotes = recentQuotes(parseInt(req.query.limit, 10) || 200);
+  res.json({ quotes });
+});
+
 // Recent Predict on-chain activity. 10s cache. Pulls multiple event types in parallel.
 let activityCache = { data: null, ts: 0 };
 const EVENT_TYPES = [

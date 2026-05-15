@@ -9,16 +9,16 @@ export default function AboutModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="modal-body">
           <p>
-            Live volatility tooling for <a href="https://docs.sui.io/onchain-finance/deepbook-predict/" target="_blank" rel="noreferrer">DeepBook Predict</a> — the prediction + options primitive shipping in DeepBook's Sui stack.
+            Live volatility tooling for <a href="https://docs.sui.io/onchain-finance/deepbook-predict/" target="_blank" rel="noreferrer">DeepBook Predict</a> - the prediction + options primitive shipping in DeepBook's Sui stack.
           </p>
 
           <h3>What it shows</h3>
           <ul>
-            <li><strong>Surface</strong> — 3D Gatheral SVI volatility surface (strike × expiry → IV) for the selected BTC oracle, with butterfly + calendar arbitrage-free checks running live</li>
-            <li><strong>Smile</strong> — overlay of all live oracles' smiles at their actual expiries, so you can see term-by-term skew at a glance</li>
-            <li><strong>Term</strong> — ATM and 25-delta wing IV across days-to-expiry — the term structure of vol</li>
-            <li><strong>Activity</strong> — every <code>PositionMinted</code>, <code>PositionRedeemed</code>, <code>OracleSettled</code>, <code>Supplied</code> on-chain event, with Suiscan links</li>
-            <li><strong>Markets</strong> — sortable table of every live oracle (expiry, days, ATM IV, 25Δ skew, forward)</li>
+            <li><strong>Surface</strong> - 3D Gatheral SVI volatility surface (strike × expiry → IV) for the selected BTC oracle, with butterfly + calendar arbitrage-free checks running live</li>
+            <li><strong>Smile</strong> - overlay of all live oracles' smiles at their actual expiries, so you can see term-by-term skew at a glance</li>
+            <li><strong>Term</strong> - ATM and 25-delta wing IV across days-to-expiry - the term structure of vol</li>
+            <li><strong>Activity</strong> - every <code>PositionMinted</code>, <code>PositionRedeemed</code>, <code>OracleSettled</code>, <code>Supplied</code> on-chain event, with Suiscan links</li>
+            <li><strong>Markets</strong> - sortable table of every live oracle (expiry, days, ATM IV, 25Δ skew, forward)</li>
           </ul>
 
           <h3>How it's wired</h3>
@@ -38,7 +38,7 @@ export default function AboutModal({ onClose }: { onClose: () => void }) {
 
           <h3>Keyboard</h3>
           <p>
-            <code>1</code>–<code>5</code> switch tabs · <code>C</code> opens calculator · <code>?</code> opens this dialog · <code>Esc</code> closes overlays
+            <code>1</code>-<code>5</code> switch tabs · <code>C</code> opens calculator · <code>?</code> opens this dialog · <code>Esc</code> closes overlays
           </p>
         </div>
       </div>

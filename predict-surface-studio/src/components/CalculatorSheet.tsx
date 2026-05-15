@@ -117,7 +117,7 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
           )}
 
           <p style={{ marginTop: 14, fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.5 }}>
-            Estimate uses Black-Scholes digital pricing against the live SVI surface. Real DeepBook quotes include the protocol's vault spread on top — actual cost is typically a few % higher. For exact pricing, call <code style={{ fontSize: 10 }}>predict::get_trade_amounts</code>.
+            Estimate uses Black-Scholes digital pricing against the live SVI surface. Real DeepBook quotes include the protocol's vault spread on top, so actual cost is typically a few % higher. For exact pricing, call <code style={{ fontSize: 10 }}>predict::get_trade_amounts</code>.
           </p>
         </div>
       </aside>
