@@ -1,13 +1,13 @@
 # Predict Surface Studio
 
-Live 3-D volatility surface viewer for DeepBook Predict on Sui.
+Live 3D volatility surface viewer for [DeepBook Predict](https://docs.sui.io/onchain-finance/deepbook-predict/) on Sui.
 
 ## What it does
 - Streams `oracle::OracleSVIUpdated` events from the public Predict indexer
-- Reconstructs the Gatheral SVI parameterization (a, b, rho, m, sigma) into a strike x expiry x IV surface
+- Reconstructs the Gatheral raw SVI parameterization (`a, b, rho, m, sigma`) into a strike x expiry x IV surface
 - Renders the surface in 3D with `react-three-fiber`
 - Time-travel slider replays the last N snapshots
-- Arbitrage-free checker flags butterfly + calendar violations live
+- Live butterfly + calendar arbitrage-free checker flags violations
 
 ## Stack
 Vite + React + TypeScript + three.js + @react-three/fiber + @mysten/sui
@@ -16,14 +16,14 @@ Vite + React + TypeScript + three.js + @react-three/fiber + @mysten/sui
 ```
 cp .env.example .env
 npm install
-npm run dev          # frontend on :5173 (uses public predict-server endpoint)
+npm run dev          # frontend on :5173
 npm run poller       # optional: tail OracleSVIUpdated events to stdout
 ```
 
-## Hackathon track
-Sui Overflow 2026 / DeepBook Predict / Analytics & Developer Tooling lane (idea #9 from the official idea bank).
+If `predict-server.testnet.mystenlabs.com` is unreachable, the UI falls back to a mock SVI series so the page still loads.
 
-## Deploy plan
-- Static frontend on Hostinger or Vercel
-- Optional poller as PM2 service on VPS
-- Mainnet day-one switch via `VITE_PREDICT_SERVER` env var
+## Deploy
+Static frontend - any host (Vercel, Netlify, Hostinger). Optional poller as PM2 service. Switch endpoints via `VITE_PREDICT_SERVER` when mainnet ships.
+
+## License
+MIT
