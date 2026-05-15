@@ -5,6 +5,14 @@ const RPC = process.env.SUI_RPC ?? getFullnodeUrl('testnet');
 
 const client = new SuiClient({ url: RPC });
 
+function decodeI64(v) {
+  if (v == null) return 0;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') return Number(v);
+  const mag = Number(v.magnitude ?? 0);
+  return v.is_negative ? -mag : mag;
+}
+
 async function tail() {
   let cursor = null;
   while (true) {
@@ -19,9 +27,13 @@ async function tail() {
         const p = ev.parsedJson ?? {};
         process.stdout.write(JSON.stringify({
           ts: ev.timestampMs,
-          oracle: p.oracle_id ?? p.oracleId,
-          fwd: p.forward,
-          svi: p.svi ?? { a: p.a, b: p.b, rho: p.rho, m: p.m, sigma: p.sigma },
+          oracle: p.oracle_id,
+          a: Number(p.a) / 1e9,
+          b: Number(p.b) / 1e9,
+          rho: decodeI64(p.rho) / 1e9,
+          m: decodeI64(p.m) / 1e9,
+          sigma: Number(p.sigma) / 1e9,
+          chainTs: p.timestamp,
         }) + '\n');
       }
       if (res.hasNextPage && res.nextCursor) cursor = res.nextCursor;
