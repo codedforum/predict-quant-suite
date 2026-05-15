@@ -126,6 +126,23 @@ export async function fetchBacktest(): Promise<BacktestResult | null> {
   } catch { return null; }
 }
 
+export interface OrderbookRow { strike: number; callAsk: number | null; callBid: number | null; putAsk: number | null; putBid: number | null }
+export interface Orderbook { oracleId: string; forward: number; expiry: number; rows: OrderbookRow[] }
+export async function fetchOrderbook(oracleId: string): Promise<Orderbook | null> {
+  try { const r = await fetch(`${API_BASE}/api/orderbook/${oracleId}`, { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch { return null; }
+}
+
+export interface StrikeFlowBucket { strike: number; calls: number; puts: number; callVol: number; putVol: number }
+export interface StrikeFlow { oracleId: string; eventCount: number; buckets: StrikeFlowBucket[]; events: { ts: number; strike: number; is_up: boolean; quantity: number; cost: number }[] }
+export async function fetchStrikeFlow(oracleId: string): Promise<StrikeFlow | null> {
+  try { const r = await fetch(`${API_BASE}/api/strike-flow/${oracleId}`, { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch { return null; }
+}
+
+export interface HourActivity { windowDays: number; cells: { dow: number; hour: number; mints: number; vol: number }[] }
+export async function fetchHourActivity(): Promise<HourActivity | null> {
+  try { const r = await fetch(`${API_BASE}/api/hour-activity`, { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch { return null; }
+}
+
 export interface RealizedVol {
   oracleId: string;
   sampleCount: number;

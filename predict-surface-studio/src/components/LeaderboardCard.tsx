@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchLeaderboard, LeaderboardRow } from '../lib/predictApi';
 import { downloadCsv } from '../lib/csv';
+import EquityCurve from './EquityCurve';
 
 export default function LeaderboardCard() {
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
@@ -41,6 +42,10 @@ export default function LeaderboardCard() {
             </span>
           </div>
         </div>
+      </div>
+      <div style={{ padding: '14px 18px 6px' }}>
+        <div style={{ fontSize: 10, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '.1em', fontWeight: 600, marginBottom: 6 }}>#1 EQUITY CURVE</div>
+        <EquityCurve managerId={top.manager} />
       </div>
       <table className="lb-table">
         <thead><tr><th>#</th><th>manager</th><th>payout</th><th>wins</th><th>mints</th><th>net</th></tr></thead>

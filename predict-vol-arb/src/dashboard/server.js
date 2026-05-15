@@ -179,6 +179,125 @@ app.get('/api/vault', async (req, res) => {
   }
 });
 
+// Real on-chain order book for an oracle - calls predict::get_trade_amounts via devInspect for many strikes.
+import { Transaction } from '@mysten/sui/transactions';
+const DUSDC_TYPE = process.env.DUSDC_TYPE;
+let orderbookCache = new Map();
+app.get('/api/orderbook/:oracleId', async (req, res) => {
+  try {
+    const oid = req.params.oracleId;
+    const cached = orderbookCache.get(oid);
+    if (cached && Date.now() - cached.ts < 20_000) return res.json({ ...cached.data, cache: 'hit' });
+    if (!PKG || !process.env.PREDICT_OBJECT) throw new Error('PREDICT_OBJECT or PREDICT_PKG not set');
+
+    // Read forward + expiry
+    const obj = await sui.getObject({ id: oid, options: { showContent: true } });
+    const f = obj.data?.content?.fields ?? {};
+    const expiry = Number(f.expiry ?? f.expiry_ms ?? 0);
+    if (!expiry) throw new Error('no expiry on oracle');
+    // Use a recent OraclePricesUpdated to get forward
+    const priceEvs = await sui.queryEvents({ query: { MoveEventType: `${PKG}::oracle::OraclePricesUpdated` }, limit: 30, order: 'descending' });
+    const lastPrice = priceEvs.data.find((e) => e.parsedJson?.oracle_id === oid)?.parsedJson;
+    const forward = lastPrice ? Number(lastPrice.forward) / 1e9 : 79000;
+    const F_raw = Math.round(forward * 1e9);
+
+    // Build strikes: -8% to +8% in 1% steps = 17 strikes
+    const strikes = [];
+    for (let pct = -8; pct <= 8; pct += 1) strikes.push(Math.round(forward * (1 + pct / 100)));
+    const quantity = 1_000_000; // $1 of binary
+
+    // One PTB with all view calls in batch (cheaper roundtrip)
+    const tx = new Transaction();
+    for (const s of strikes) {
+      const sRaw = BigInt(Math.round(s * 1e9));
+      // CALL price
+      const keyCall = tx.moveCall({ target: `${PKG}::market_key::up`,   arguments: [tx.pure.id(oid), tx.pure.u64(BigInt(expiry)), tx.pure.u64(sRaw)] });
+      tx.moveCall({ target: `${PKG}::predict::get_trade_amounts`, arguments: [tx.object(process.env.PREDICT_OBJECT), tx.object(oid), keyCall, tx.pure.u64(BigInt(quantity)), tx.object('0x6')] });
+      // PUT price
+      const keyPut = tx.moveCall({ target: `${PKG}::market_key::down`, arguments: [tx.pure.id(oid), tx.pure.u64(BigInt(expiry)), tx.pure.u64(sRaw)] });
+      tx.moveCall({ target: `${PKG}::predict::get_trade_amounts`, arguments: [tx.object(process.env.PREDICT_OBJECT), tx.object(oid), keyPut, tx.pure.u64(BigInt(quantity)), tx.object('0x6')] });
+    }
+    const r = await sui.devInspectTransactionBlock({ sender: '0x0000000000000000000000000000000000000000000000000000000000000000', transactionBlock: tx });
+
+    const decodeU64 = (bytes) => {
+      // little-endian u64
+      let n = 0n;
+      for (let i = 0; i < 8 && i < bytes.length; i++) n |= BigInt(bytes[i]) << BigInt(8 * i);
+      return Number(n);
+    };
+
+    const rows = strikes.map((strike, i) => {
+      const callRes = r.results?.[i * 4 + 1]?.returnValues; // get_trade_amounts returns (cost, payout)
+      const putRes  = r.results?.[i * 4 + 3]?.returnValues;
+      const callAsk = callRes?.[0]?.[0] ? decodeU64(callRes[0][0]) / quantity : null;
+      const callBid = callRes?.[1]?.[0] ? decodeU64(callRes[1][0]) / quantity : null;
+      const putAsk  = putRes?.[0]?.[0]  ? decodeU64(putRes[0][0])  / quantity : null;
+      const putBid  = putRes?.[1]?.[0]  ? decodeU64(putRes[1][0])  / quantity : null;
+      return { strike, callAsk, callBid, putAsk, putBid };
+    });
+
+    const out = { ts: Date.now(), oracleId: oid, forward, expiry, rows };
+    orderbookCache.set(oid, { ts: Date.now(), data: out });
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
+// Per-strike trade flow over last 24h (from PositionMinted events for an oracle).
+let flowCache = new Map();
+app.get('/api/strike-flow/:oracleId', async (req, res) => {
+  try {
+    const oid = req.params.oracleId;
+    const cached = flowCache.get(oid);
+    if (cached && Date.now() - cached.ts < 30_000) return res.json({ ...cached.data, cache: 'hit' });
+    if (!PKG) throw new Error('PREDICT_PKG not set');
+    const since = Date.now() - 24 * 3600_000;
+    const evs = await sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::PositionMinted` }, limit: 50, order: 'descending' });
+    const events = evs.data
+      .filter((e) => e.parsedJson?.oracle_id === oid && Number(e.timestampMs) >= since)
+      .map((e) => ({
+        ts: Number(e.timestampMs),
+        strike: Number(e.parsedJson.strike) / 1e9,
+        is_up: !!e.parsedJson.is_up,
+        quantity: Number(e.parsedJson.quantity),
+        cost: Number(e.parsedJson.cost) / 1e6,
+      }));
+    const buckets = new Map();
+    for (const ev of events) {
+      const key = Math.round(ev.strike / 1000) * 1000;
+      const cur = buckets.get(key) || { strike: key, calls: 0, puts: 0, callVol: 0, putVol: 0 };
+      if (ev.is_up) { cur.calls += 1; cur.callVol += ev.cost; } else { cur.puts += 1; cur.putVol += ev.cost; }
+      buckets.set(key, cur);
+    }
+    const sorted = Array.from(buckets.values()).sort((a, b) => a.strike - b.strike);
+    const out = { ts: Date.now(), oracleId: oid, eventCount: events.length, buckets: sorted, events: events.slice(-30) };
+    flowCache.set(oid, { ts: Date.now(), data: out });
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
+// Hour-of-day activity heatmap from on-chain events.
+let hourCache = { data: null, ts: 0 };
+app.get('/api/hour-activity', async (req, res) => {
+  try {
+    if (Date.now() - hourCache.ts < 120_000 && hourCache.data) return res.json({ ...hourCache.data, cache: 'hit' });
+    if (!PKG) throw new Error('PREDICT_PKG not set');
+    const since = Date.now() - 7 * 24 * 3600_000;
+    const evs = await sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::PositionMinted` }, limit: 50, order: 'descending' });
+    const cells = Array.from({ length: 7 * 24 }, (_, i) => ({ dow: Math.floor(i / 24), hour: i % 24, mints: 0, vol: 0 }));
+    for (const e of evs.data) {
+      const t = Number(e.timestampMs);
+      if (t < since) continue;
+      const d = new Date(t);
+      const idx = d.getUTCDay() * 24 + d.getUTCHours();
+      cells[idx].mints += 1;
+      cells[idx].vol += Number(e.parsedJson?.cost || 0) / 1e6;
+    }
+    const out = { ts: Date.now(), windowDays: 7, cells };
+    hourCache = { data: out, ts: Date.now() };
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
 // Realized vol for a given oracle, computed from OraclePricesUpdated events.
 let realizedCache = new Map();
 app.get('/api/realized/:oracleId', async (req, res) => {
