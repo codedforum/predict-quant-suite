@@ -1,5 +1,20 @@
+import { useEffect, useRef } from 'react';
 import { SurfaceResponse, Stats, SviSnapshot } from '../lib/predictApi';
 import { iv as sviIv } from '../lib/sviMath';
+
+function useFlashOnChange(value: number | string) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const prev = useRef<number | string | null>(null);
+  useEffect(() => {
+    if (prev.current !== null && prev.current !== value && ref.current) {
+      ref.current.classList.remove('kpi-flash');
+      void ref.current.offsetWidth;
+      ref.current.classList.add('kpi-flash');
+    }
+    prev.current = value;
+  }, [value]);
+  return ref;
+}
 
 interface Props {
   surface: SurfaceResponse | null;
@@ -18,6 +33,12 @@ export default function HeroSection({ surface, oracles, current, stats }: Props)
   const biggestPayout = stats?.biggest_payout?.payout_dusdc ?? 0;
   const paidOut = stats?.payout_volume_dusdc ?? 0;
 
+  const fwdRef = useFlashOnChange(surface ? surface.primary.forward.toFixed(0) : '--');
+  const ivRef  = useFlashOnChange(current ? atmIv.toFixed(2) : '--');
+  const oraRef = useFlashOnChange(oracles.length);
+  const mintRef = useFlashOnChange(mintCount);
+  const winRef = useFlashOnChange(biggestPayout);
+
   return (
     <section className="hero">
       <h1>
@@ -31,24 +52,24 @@ export default function HeroSection({ surface, oracles, current, stats }: Props)
 
       <div className="live-grid">
         <div className="live-card">
-          <div className="v">{surface ? `$${surface.primary.forward.toFixed(0)}` : '--'}</div>
+          <div className="v" ref={fwdRef as any}>{surface ? `$${surface.primary.forward.toFixed(0)}` : '--'}</div>
           <div className="l">BTC FORWARD</div>
         </div>
         <div className="live-card">
-          <div className="v">{current ? `${(atmIv * 100).toFixed(1)}%` : '--'}</div>
+          <div className="v" ref={ivRef as any}>{current ? `${(atmIv * 100).toFixed(1)}%` : '--'}</div>
           <div className="l">ATM IV</div>
         </div>
         <div className="live-card">
-          <div className="v">{oracles.length || '--'}</div>
+          <div className="v" ref={oraRef as any}>{oracles.length || '--'}</div>
           <div className="l">LIVE ORACLES</div>
         </div>
         <div className="live-card">
-          <div className="v">{stats ? mintCount : '--'}</div>
+          <div className="v" ref={mintRef as any}>{stats ? mintCount : '--'}</div>
           <div className="l">24H MINTS</div>
           <div className="sub">${stats ? stats.mint_volume_dusdc.toFixed(0) : '0'} notional</div>
         </div>
         <div className="live-card">
-          <div className="v green">{stats ? `$${biggestPayout.toFixed(0)}` : '--'}</div>
+          <div className="v green" ref={winRef as any}>{stats ? `$${biggestPayout.toFixed(0)}` : '--'}</div>
           <div className="l">BIGGEST 24H WIN</div>
           <div className="sub">${paidOut.toFixed(0)} paid out</div>
         </div>

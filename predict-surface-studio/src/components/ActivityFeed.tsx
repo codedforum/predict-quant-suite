@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchActivity, ActivityEvent } from '../lib/predictApi';
+import { downloadCsv } from '../lib/csv';
 
 const TYPE_LABEL: Record<string, { label: string; cls: string }> = {
   PositionMinted:    { label: 'mint',   cls: 'mint' },
@@ -40,20 +41,31 @@ export default function ActivityFeed() {
 
   if (!events.length) return <div className="empty">No on-chain events in the recent window.</div>;
 
+  function exportCsv() {
+    downloadCsv('predict-activity-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.csv',
+      events.map((e) => ({ time: new Date(e.timestampMs).toISOString(), kind: e.kind, summary: e.summary, txDigest: e.txDigest })));
+  }
+
   return (
-    <div className="activity">
-      {events.map((ev, i) => {
-        const meta = TYPE_LABEL[ev.kind] ?? { label: ev.kind.toLowerCase(), cls: 'svi' };
-        const time = new Date(ev.timestampMs).toISOString().slice(11, 19);
-        return (
-          <div className="activity-row" key={`${ev.txDigest}-${i}`}>
-            <span className="ts">{time}</span>
-            <span className={'ev ' + meta.cls}>{meta.label}</span>
-            <span className="body">{ev.summary}</span>
-            <a href={`https://suiscan.xyz/testnet/tx/${ev.txDigest}`} target="_blank" rel="noreferrer">tx ↗</a>
-          </div>
-        );
-      })}
-    </div>
+    <>
+      <div className="activity-toolbar">
+        <span>{events.length} events</span>
+        <button className="icon-btn" onClick={exportCsv} title="Download CSV">⬇ csv</button>
+      </div>
+      <div className="activity">
+        {events.map((ev, i) => {
+          const meta = TYPE_LABEL[ev.kind] ?? { label: ev.kind.toLowerCase(), cls: 'svi' };
+          const time = new Date(ev.timestampMs).toISOString().slice(11, 19);
+          return (
+            <div className="activity-row" key={`${ev.txDigest}-${i}`}>
+              <span className="ts">{time}</span>
+              <span className={'ev ' + meta.cls}>{meta.label}</span>
+              <span className="body">{ev.summary}</span>
+              <a href={`https://suiscan.xyz/testnet/tx/${ev.txDigest}`} target="_blank" rel="noreferrer">tx ↗</a>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
