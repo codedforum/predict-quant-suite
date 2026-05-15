@@ -19,30 +19,43 @@ export interface SurfaceResponse {
   cache: 'hit' | 'miss';
 }
 
+export interface ActivityEvent {
+  kind: string;
+  timestampMs: number;
+  txDigest: string;
+  summary: string;
+}
+
 export async function fetchSurface(): Promise<SurfaceResponse | null> {
   try {
     const r = await fetch(`${API_BASE}/api/surface`, { cache: 'no-store' });
     if (!r.ok) throw new Error(`api ${r.status}`);
-    const j = await r.json();
-    return j;
+    return await r.json();
   } catch (e) {
     console.error('fetchSurface failed', e);
     return null;
   }
 }
 
-// Build a synthetic snapshot list across the available oracles so the
-// time-travel slider has something to scrub through immediately.
-export function snapshotsFromSurface(s: SurfaceResponse): SviSnapshot[] {
-  const snaps: SviSnapshot[] = [];
-  for (const o of s.oracles) {
-    snaps.push({
-      oracleId: o.oracleId,
-      timestampMs: o.lastUpdateMs,
-      forward: s.primary.forward,
-      expirySec: s.primary.expirySec,
-      svi: o.svi,
-    });
+export async function fetchActivity(): Promise<ActivityEvent[]> {
+  try {
+    const r = await fetch(`${API_BASE}/api/activity`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`api ${r.status}`);
+    const j = await r.json();
+    return j.events ?? [];
+  } catch (e) {
+    console.error('fetchActivity failed', e);
+    return [];
   }
-  return snaps.length ? snaps : [s.primary];
+}
+
+export function snapshotsFromSurface(s: SurfaceResponse): SviSnapshot[] {
+  if (!s.oracles?.length) return [s.primary];
+  return s.oracles.map((o) => ({
+    oracleId: o.oracleId,
+    timestampMs: o.lastUpdateMs,
+    forward: s.primary.forward,
+    expirySec: s.primary.expirySec,
+    svi: o.svi,
+  }));
 }
