@@ -20,18 +20,15 @@ export default function HeroSection({ surface, oracles, current, stats }: Props)
 
   return (
     <section className="hero">
-      <span className="hero-tag">
-        <span className="hero-tag-dot" />
-        ON-CHAIN · SUI TESTNET · {surface?.source?.toUpperCase() || 'CONNECTING'}
-      </span>
+      <div className="eyebrow">DeepBook Predict · Sui testnet</div>
 
       <h1>
-        Live <span className="h-grad">volatility surface</span><br />
-        for DeepBook Predict.
+        On-chain <span className="h-grad">volatility surface</span><br />
+        and vol-arb monitor.
       </h1>
 
       <p className="lede">
-        Stream the Gatheral SVI parameterization from on-chain oracles, watch every BTC binary mint and settle, monitor the cross-venue vol spread vs Polymarket. All on-chain, no wallet connection needed.
+        Stream the Gatheral SVI parameterization from on-chain oracles, watch every BTC binary mint and settle, and monitor the cross-venue vol spread against Polymarket. Read-only, no wallet needed.
       </p>
 
       <div className="live-grid">
