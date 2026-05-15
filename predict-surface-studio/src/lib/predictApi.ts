@@ -126,6 +126,34 @@ export async function fetchBacktest(): Promise<BacktestResult | null> {
   } catch { return null; }
 }
 
+export interface RealizedVol {
+  oracleId: string;
+  sampleCount: number;
+  windows: Record<string, number | null>;
+  points: { ts: number; spot: number }[];
+}
+export async function fetchRealized(oracleId: string): Promise<RealizedVol | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/realized/${oracleId}`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+export interface ManagerPnl {
+  managerId: string;
+  points: number;
+  finalPnl: number;
+  series: { ts: number; kind: 'mint' | 'redeem'; delta: number; pnl: number }[];
+}
+export async function fetchManagerPnl(id: string): Promise<ManagerPnl | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/manager/${id}/pnl`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
 export interface PositionsLookup {
   owner: string;
   managerCount: number;

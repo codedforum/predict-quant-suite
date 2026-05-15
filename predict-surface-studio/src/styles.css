@@ -1026,6 +1026,51 @@ h1, h2, h3, h4 { font-family: var(--sg); margin: 0; font-weight: 700; letter-spa
 .bt-stat .ds-label { font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
 .bt-stat .ds-value { font-family: var(--sg); font-weight: 800; font-size: 18px; color: var(--t1); font-variant-numeric: tabular-nums; margin-top: 4px; }
 
+/* ============ Calc presets ============ */
+.preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.preset {
+  background: var(--glass); color: var(--t1);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px; font-family: var(--mono); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.preset:hover { background: var(--glass-2); border-color: rgba(41,141,255,.3); color: var(--sui-blue); }
+
+/* ============ Equity curve ============ */
+.equity { padding-top: 10px; border-top: 1px solid var(--border); margin-top: 6px; }
+.equity-stats { display: flex; gap: 14px; padding-bottom: 8px; font-family: var(--mono); font-size: 11px; }
+.equity-stats > div { display: flex; flex-direction: column; gap: 2px; }
+.equity-stats span { color: var(--t3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.equity-stats strong { color: var(--t1); }
+
+/* ============ Tour overlay ============ */
+.tour-overlay { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.tour-mask { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: auto; }
+.tour-card {
+  position: fixed;
+  background: linear-gradient(180deg, rgba(20,30,50,.95), rgba(12,18,32,.95));
+  border: 1px solid var(--sui-blue);
+  border-radius: 14px; padding: 20px 22px;
+  width: 360px; max-width: calc(100vw - 32px);
+  pointer-events: auto;
+  box-shadow: 0 20px 60px rgba(41,141,255,.25), 0 0 0 1px rgba(255,255,255,.06);
+  animation: tourCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes tourCardIn { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.tour-step {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--sui-blue); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 700;
+  margin-bottom: 8px;
+}
+.tour-card h3 {
+  font-family: var(--sg); font-size: 17px; font-weight: 700;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fff, var(--sui-blue-light));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.tour-card p { color: var(--t2); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
+.tour-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
 /* ============ Live trade ticker ============ */
 .ticker-wrap {
   position: sticky; top: 60px; z-index: 22;

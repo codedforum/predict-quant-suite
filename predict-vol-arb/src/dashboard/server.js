@@ -179,6 +179,83 @@ app.get('/api/vault', async (req, res) => {
   }
 });
 
+// Realized vol for a given oracle, computed from OraclePricesUpdated events.
+let realizedCache = new Map();
+app.get('/api/realized/:oracleId', async (req, res) => {
+  try {
+    const oid = req.params.oracleId;
+    const cached = realizedCache.get(oid);
+    if (cached && Date.now() - cached.ts < 60_000) return res.json({ ...cached.data, cache: 'hit' });
+    if (!PKG) throw new Error('PREDICT_PKG not set');
+    const evs = await sui.queryEvents({
+      query: { MoveEventType: `${PKG}::oracle::OraclePricesUpdated` },
+      limit: 200, order: 'descending',
+    });
+    const ts = evs.data
+      .filter((e) => e.parsedJson?.oracle_id === oid)
+      .map((e) => ({ ts: Number(e.timestampMs), spot: Number(e.parsedJson.spot) / 1e9 }))
+      .filter((p) => p.spot > 0)
+      .sort((a, b) => a.ts - b.ts);
+
+    function realizedVolForWindowMs(windowMs) {
+      const sample = ts.filter((p) => p.ts >= Date.now() - windowMs);
+      if (sample.length < 3) return null;
+      const rets = [];
+      for (let i = 1; i < sample.length; i++) {
+        const r = Math.log(sample[i].spot / sample[i - 1].spot);
+        const dt = (sample[i].ts - sample[i - 1].ts) / 1000;
+        if (dt > 0) rets.push({ r, dt });
+      }
+      if (!rets.length) return null;
+      // annualised volatility = sqrt(sum(r^2 / dt) / N) * sqrt(seconds-per-year)
+      const meanR = rets.reduce((s, x) => s + x.r, 0) / rets.length;
+      const varR = rets.reduce((s, x) => s + (x.r - meanR) ** 2, 0) / rets.length;
+      const meanDt = rets.reduce((s, x) => s + x.dt, 0) / rets.length;
+      return Math.sqrt(varR / meanDt) * Math.sqrt(365 * 86400);
+    }
+
+    const out = {
+      ts: Date.now(),
+      oracleId: oid,
+      sampleCount: ts.length,
+      windows: {
+        '5m':  realizedVolForWindowMs(5 * 60_000),
+        '30m': realizedVolForWindowMs(30 * 60_000),
+        '1h':  realizedVolForWindowMs(60 * 60_000),
+        '6h':  realizedVolForWindowMs(6 * 60 * 60_000),
+        '24h': realizedVolForWindowMs(24 * 60 * 60_000),
+      },
+      points: ts.slice(-50),
+    };
+    realizedCache.set(oid, { ts: Date.now(), data: out });
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
+// Per-manager equity curve from mint + redeem events.
+let mgrPnlCache = new Map();
+app.get('/api/manager/:id/pnl', async (req, res) => {
+  try {
+    const mgrId = req.params.id;
+    const cached = mgrPnlCache.get(mgrId);
+    if (cached && Date.now() - cached.ts < 60_000) return res.json({ ...cached.data, cache: 'hit' });
+    if (!PKG) throw new Error('PREDICT_PKG not set');
+    const [mints, redeems] = await Promise.all([
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::PositionMinted` },   limit: 50, order: 'descending' }),
+      sui.queryEvents({ query: { MoveEventType: `${PKG}::predict::PositionRedeemed` }, limit: 50, order: 'descending' }),
+    ]);
+    const events = [];
+    for (const e of mints.data)   if (e.parsedJson?.manager_id === mgrId) events.push({ ts: Number(e.timestampMs), kind: 'mint',   delta: -Number(e.parsedJson.cost   || 0) / 1e6 });
+    for (const e of redeems.data) if (e.parsedJson?.manager_id === mgrId) events.push({ ts: Number(e.timestampMs), kind: 'redeem', delta: +Number(e.parsedJson.payout || 0) / 1e6 });
+    events.sort((a, b) => a.ts - b.ts);
+    let pnl = 0;
+    const series = events.map((e) => { pnl += e.delta; return { ts: e.ts, kind: e.kind, delta: e.delta, pnl }; });
+    const out = { ts: Date.now(), managerId: mgrId, points: series.length, finalPnl: pnl, series };
+    mgrPnlCache.set(mgrId, { ts: Date.now(), data: out });
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
 // Wallet lookup: get PredictManager(s) for a Sui address + summary.
 let positionsCache = new Map();
 app.get('/api/positions/:owner', async (req, res) => {
