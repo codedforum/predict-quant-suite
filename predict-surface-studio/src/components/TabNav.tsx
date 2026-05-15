@@ -1,9 +1,10 @@
-export type TabKey = 'surface' | 'smile' | 'term' | 'activity' | 'markets';
+export type TabKey = 'surface' | 'smile' | 'term' | 'volarb' | 'activity' | 'markets';
 
 export const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'surface',  label: 'Surface',  icon: '◆' },
   { key: 'smile',    label: 'Smile',    icon: '◡' },
   { key: 'term',     label: 'Term',     icon: '⌒' },
+  { key: 'volarb',   label: 'Vol-Arb',  icon: '⇄' },
   { key: 'activity', label: 'Activity', icon: '⚡' },
   { key: 'markets',  label: 'Markets',  icon: '☰' },
 ];

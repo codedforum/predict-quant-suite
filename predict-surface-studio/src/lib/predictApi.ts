@@ -37,6 +37,35 @@ export async function fetchSurface(): Promise<SurfaceResponse | null> {
   }
 }
 
+export interface Stats {
+  window_h: number;
+  mints: number;
+  redeems: number;
+  settled: number;
+  supplied: number;
+  mint_volume_dusdc: number;
+  payout_volume_dusdc: number;
+  supplied_volume_dusdc: number;
+  biggest_payout: { payout_dusdc: number; side: string; strike: number } | null;
+}
+export async function fetchStats(): Promise<Stats | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/stats`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`api ${r.status}`);
+    return await r.json();
+  } catch (e) { console.error('fetchStats failed', e); return null; }
+}
+
+export interface SpreadQuote { ts: number; predictIv: number; polyIv: number }
+export async function fetchSpread(limit = 200): Promise<SpreadQuote[]> {
+  try {
+    const r = await fetch(`${API_BASE}/api/spread?limit=${limit}`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`api ${r.status}`);
+    const j = await r.json();
+    return j.quotes ?? [];
+  } catch (e) { console.error('fetchSpread failed', e); return []; }
+}
+
 export async function fetchActivity(): Promise<ActivityEvent[]> {
   try {
     const r = await fetch(`${API_BASE}/api/activity`, { cache: 'no-store' });

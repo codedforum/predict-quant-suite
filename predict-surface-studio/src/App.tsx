@@ -8,6 +8,8 @@ import MultiSmilePlot from './components/MultiSmilePlot';
 import TermStructurePlot from './components/TermStructurePlot';
 import ActivityFeed from './components/ActivityFeed';
 import MarketsTable from './components/MarketsTable';
+import VolArbPlot from './components/VolArbPlot';
+import StatsRibbon from './components/StatsRibbon';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -95,13 +97,12 @@ export default function App() {
             <span style={{ color: 'var(--bad)' }}>{error}</span>
           ) : surface ? (
             <>
-              <span className="live-badge"><span className="live-dot" /> live</span>
               <span>BTC fwd <strong className="mono">${surface.primary.forward.toFixed(2)}</strong></span>
               <span><strong>{oracles.length}</strong> oracles</span>
               <span className={'source-pill ' + surface.source}>{surface.source}</span>
             </>
           ) : (
-            <span className="live-badge"><span className="live-dot" /> connecting...</span>
+            <span style={{ color: 'var(--text-dim)' }}>connecting...</span>
           )}
           <div className="header-actions">
             <button className="icon-btn primary" onClick={() => setCalcOpen(true)} title="Open calculator (C)">🧮 calc</button>
@@ -118,7 +119,6 @@ export default function App() {
       <div className="stats-strip">
         {error ? <span className="pill" style={{ color: 'var(--bad)' }}>{error}</span> : (
           <>
-            <span className="pill"><span className="live-dot" /> Live</span>
             {surface && <span className="pill">BTC <strong>${surface.primary.forward.toFixed(0)}</strong></span>}
             {surface && <span className="pill"><strong>{oracles.length}</strong> oracles</span>}
             {surface && <span className={'pill source-pill ' + surface.source}>{surface.source}</span>}
@@ -220,6 +220,29 @@ function TabPanel({ tab, oracles, current, idx, setIdx }: any) {
           </div>
           <div style={{ flex: 1, minHeight: 320 }}>
             {oracles.length ? <TermStructurePlot oracles={oracles} /> : <div className="skeleton" style={{ height: '100%' }} />}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (tab === 'volarb') {
+    return (
+      <div className="tab-panel" style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
+        <section className="card">
+          <div className="card-head">
+            <span className="card-title">24h on-chain stats</span>
+            <span className="card-meta">aggregated from settled events</span>
+          </div>
+          <StatsRibbon />
+        </section>
+        <section className="card glow" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 320 }}>
+          <div className="card-head">
+            <span className="card-title">Vol-arb spread (Predict vs Polymarket)</span>
+            <span className="card-meta">implied vol delta over time</span>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, padding: '0 4px 4px' }}>
+            <VolArbPlot />
           </div>
         </section>
       </div>

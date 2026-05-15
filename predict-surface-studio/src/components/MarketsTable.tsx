@@ -52,7 +52,7 @@ export default function MarketsTable({ oracles, selectedIdx, onSelect }: { oracl
             <tr key={r.i} className={r.i === selectedIdx ? 'active' : ''} onClick={() => onSelect(r.i)}>
               <td>{r.i + 1}</td>
               <td>{r.oracle.oracleId.slice(0, 16)}...{r.oracle.oracleId.slice(-4)}</td>
-              <td>{r.oracle.expirySec ? new Date(r.oracle.expirySec * 1000).toISOString().slice(0, 16).replace('T', ' ') : '—'}</td>
+              <td>{r.oracle.expirySec ? new Date(r.oracle.expirySec * 1000).toISOString().slice(0, 16).replace('T', ' ') : '-'}</td>
               <td>{r.days.toFixed(2)}d</td>
               <td>{(r.atm * 100).toFixed(2)}%</td>
               <td style={{ color: r.skew >= 0 ? 'var(--bad)' : 'var(--good)' }}>{(r.skew * 100).toFixed(2)}%</td>
