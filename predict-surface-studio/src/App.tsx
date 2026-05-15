@@ -10,6 +10,9 @@ import ActivityFeed from './components/ActivityFeed';
 import MarketsTable from './components/MarketsTable';
 import VolArbPlot from './components/VolArbPlot';
 import StatsRibbon from './components/StatsRibbon';
+import OpportunitiesFeed from './components/OpportunitiesFeed';
+import BotHealthCard from './components/BotHealthCard';
+import TGBotCard from './components/TGBotCard';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -199,11 +202,27 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error }: any) {
             <StatsRibbon />
           </div>
         </section>
-        <section className="card glow tall" style={{ minHeight: 480 }}>
+        <section className="card glow" style={{ minHeight: 380 }}>
           <div className="card-head"><h2>Vol-arb spread</h2><span className="meta">Predict IV vs Polymarket BTC binary</span></div>
-          <div className="card-body card-body-flex" style={{ minHeight: 380 }}>
+          <div className="card-body card-body-flex" style={{ minHeight: 320 }}>
             <VolArbPlot />
           </div>
+        </section>
+        <div className="two-col">
+          <section className="card">
+            <div className="card-head"><h2>Live opportunities</h2><span className="meta">edge above threshold</span></div>
+            <div className="card-body card-body-flex" style={{ padding: 0, minHeight: 220 }}>
+              <OpportunitiesFeed />
+            </div>
+          </section>
+          <section className="card">
+            <div className="card-head"><h2>Bot health</h2><span className="meta">runtime config</span></div>
+            <BotHealthCard />
+          </section>
+        </div>
+        <section className="card">
+          <div className="card-head"><h2>Trade from Telegram</h2><span className="meta">predict-tg-bot</span></div>
+          <TGBotCard />
         </section>
       </div>
     );

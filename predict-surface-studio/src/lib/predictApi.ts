@@ -57,6 +57,43 @@ export async function fetchStats(): Promise<Stats | null> {
 }
 
 export interface SpreadQuote { ts: number; predictIv: number; polyIv: number }
+
+export interface Health {
+  dry_run: boolean;
+  kill_switch_active: boolean;
+  min_edge_vol: number;
+  bankroll_usdc: number;
+  max_daily_loss_usdc: number;
+  poll_ms: number;
+  last_poll_ts: number | null;
+  last_poll_age_s: number | null;
+  last_predict_iv: number | null;
+  last_poly_iv: number | null;
+  polymarket_alive: boolean;
+  rpc: string;
+  predict_pkg: string;
+  version: string;
+}
+export async function fetchHealth(): Promise<Health | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/health`, { cache: 'no-store' });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+export interface ArbOpportunity {
+  ts: number; predictIv: number; polyIv: number;
+  edge: number; side: 'buyPredict' | 'sellPredict'; kelly: number;
+}
+export async function fetchOpportunities(): Promise<ArbOpportunity[]> {
+  try {
+    const r = await fetch(`${API_BASE}/api/opportunities`, { cache: 'no-store' });
+    if (!r.ok) return [];
+    const j = await r.json();
+    return j.opportunities ?? [];
+  } catch { return []; }
+}
 export async function fetchSpread(limit = 200): Promise<SpreadQuote[]> {
   try {
     const r = await fetch(`${API_BASE}/api/spread?limit=${limit}`, { cache: 'no-store' });

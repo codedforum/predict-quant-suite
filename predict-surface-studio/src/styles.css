@@ -640,5 +640,61 @@ h1, h2, h3, h4 { font-family: var(--sg); margin: 0; font-weight: 700; letter-spa
 .foot a { color: var(--t2); margin: 0 10px; }
 .foot a:hover { color: var(--accent); }
 
+/* ============ Bot health card ============ */
+.bot-health-grid { display: flex; flex-direction: column; gap: 10px; }
+.bh-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.bh-label { color: var(--t2); font-family: var(--mono); font-size: 11px; }
+.bh-val { color: var(--t1); font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 500; }
+.bh-pill {
+  padding: 3px 9px; border-radius: 4px;
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.bh-pill.good { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,.22); }
+.bh-pill.warn { background: rgba(251,191,36,0.12); color: var(--yellow); border: 1px solid rgba(251,191,36,.22); }
+.bh-pill.bad  { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,.22); animation: badPulse 1.4s infinite; }
+.bh-divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+/* ============ Opportunities feed ============ */
+.opps { max-height: 100%; overflow-y: auto; }
+.opp-row {
+  display: grid; grid-template-columns: 70px 110px 1fr auto auto;
+  gap: 14px; align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  transition: background 0.15s;
+}
+.opp-row:hover { background: var(--glass); }
+.opp-time { color: var(--t3); font-family: var(--mono); }
+.opp-side {
+  font-family: var(--mono); font-size: 10px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 4px 10px; border-radius: 4px; text-align: center;
+}
+.opp-side.buy  { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,.22); }
+.opp-side.sell { background: rgba(239,68,68,0.12);  color: var(--red);   border: 1px solid rgba(239,68,68,.22); }
+.opp-ivs { font-family: var(--mono); font-size: 11px; color: var(--t2); }
+.opp-ivs strong { color: var(--t1); font-weight: 700; font-variant-numeric: tabular-nums; }
+.opp-edge, .opp-kelly { font-family: var(--mono); font-size: 11px; color: var(--t2); }
+.opp-edge strong  { background: linear-gradient(135deg, var(--orange), var(--yellow)); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; font-variant-numeric: tabular-nums; }
+.opp-kelly strong { color: var(--t1); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ============ TG bot card ============ */
+.tg-cmds { display: flex; flex-direction: column; gap: 6px; }
+.tg-cmd {
+  display: grid; grid-template-columns: minmax(160px, auto) 1fr;
+  gap: 12px; align-items: center;
+  padding: 10px 14px; border-radius: 10px;
+  background: var(--glass); border: 1px solid var(--border);
+  transition: background 0.15s, border-color 0.15s;
+}
+.tg-cmd:hover { background: var(--glass-2); border-color: rgba(251,191,36,.2); }
+.tg-cmd code {
+  font-family: var(--mono); font-size: 12px; color: var(--yellow); font-weight: 600;
+  background: transparent; padding: 0;
+}
+.tg-cmd span { color: var(--t2); font-size: 12px; }
+
 /* ============ Empty / utility ============ */
 .empty { padding: 50px 20px; text-align: center; color: var(--t3); font-size: 13px; }

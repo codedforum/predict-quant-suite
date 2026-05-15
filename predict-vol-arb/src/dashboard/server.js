@@ -115,6 +115,50 @@ app.get('/api/spread', (req, res) => {
   res.json({ quotes });
 });
 
+// Bot health snapshot.
+import { existsSync } from 'node:fs';
+app.get('/api/health', (req, res) => {
+  const last = recentQuotes(1)[0];
+  const killFile = process.env.KILL_FILE || '/tmp/predict-vol-arb.kill';
+  res.json({
+    dry_run: process.env.DRY_RUN !== 'false',
+    kill_switch_active: existsSync(killFile),
+    min_edge_vol: parseFloat(process.env.MIN_EDGE_VOL || '0.04'),
+    bankroll_usdc: parseFloat(process.env.BANKROLL_USDC || '1000'),
+    max_daily_loss_usdc: parseFloat(process.env.MAX_DAILY_LOSS_USDC || '200'),
+    poll_ms: parseInt(process.env.POLL_MS || '15000', 10),
+    last_poll_ts: last?.ts ?? null,
+    last_poll_age_s: last ? Math.floor((Date.now() - last.ts) / 1000) : null,
+    last_predict_iv: last?.predictIv ?? null,
+    last_poly_iv: last?.polyIv ?? null,
+    polymarket_alive: !!last?.polyIv,
+    rpc: process.env.SUI_RPC || 'fullnode.testnet.sui.io',
+    predict_pkg: (process.env.PREDICT_PKG || '').slice(0, 16) + '...',
+    version: 'v1',
+  });
+});
+
+// Live arb opportunities (computed on the fly from latest spread + edge threshold).
+app.get('/api/opportunities', (req, res) => {
+  const minEdge = parseFloat(req.query.minEdge || process.env.MIN_EDGE_VOL || '0.04');
+  const recent = recentQuotes(60);
+  const out = [];
+  for (const q of recent.slice(-20).reverse()) {
+    if (!Number.isFinite(q.predictIv) || !Number.isFinite(q.polyIv) || !q.polyIv) continue;
+    const edge = q.polyIv - q.predictIv;
+    if (Math.abs(edge) < minEdge) continue;
+    out.push({
+      ts: q.ts,
+      predictIv: q.predictIv,
+      polyIv: q.polyIv,
+      edge: Math.abs(edge),
+      side: edge > 0 ? 'buyPredict' : 'sellPredict',
+      kelly: Math.max(0, Math.min(0.05, Math.abs(edge) * 2)),
+    });
+  }
+  res.json({ minEdge, opportunities: out, sampledOver: recent.length });
+});
+
 // Recent Predict on-chain activity. 10s cache. Pulls multiple event types in parallel.
 let activityCache = { data: null, ts: 0 };
 const EVENT_TYPES = [
