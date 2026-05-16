@@ -30,6 +30,7 @@ import SettlementCountdown from './components/SettlementCountdown';
 import OrderBookCard from './components/OrderBookCard';
 import StrikeFlowHeatmap from './components/StrikeFlowHeatmap';
 import HourActivityHeatmap from './components/HourActivityHeatmap';
+import SettingsModal from './components/SettingsModal';
 import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
@@ -52,6 +53,7 @@ export default function App() {
   const [drillOracle, setDrillOracle] = useState<string | null>(null);
   const [surfaceMode, setSurfaceMode] = useState<'3d' | '2d'>('3d');
   const [tourOpen, setTourOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (shouldShowTour()) setTimeout(() => setTourOpen(true), 1500);
@@ -106,6 +108,7 @@ export default function App() {
         </a>
         <div className="nav-actions">
           <button className="btn btn-ghost" onClick={() => setTourOpen(true)} title="Take tour">Tour</button>
+          <button className="btn btn-ghost" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
           <button className="btn btn-ghost" onClick={() => setAboutOpen(true)} title="About (?)">About</button>
           <button className="btn btn-primary" onClick={() => setCalcOpen(true)} title="Calculator (C)">Open Calc →</button>
         </div>
@@ -143,7 +146,8 @@ export default function App() {
       )}
       {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
       {drillOracle && <OracleDrilldown oracleId={drillOracle} onClose={() => setDrillOracle(null)} />}
-      <TourMode open={tourOpen} onClose={() => setTourOpen(false)} />
+      <TourMode open={tourOpen} onClose={() => setTourOpen(false)} onTabChange={(t) => setTab(t as TabKey)} />
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       <Toasts />
     </div>
   );
