@@ -26,6 +26,16 @@ CREATE TABLE IF NOT EXISTS positions (
   created_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_positions_user_open ON positions(tg_id, status);
+CREATE TABLE IF NOT EXISTS trades (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tg_id INTEGER,
+  direction TEXT,
+  strike INTEGER,
+  size_usdc REAL,
+  tx_digest TEXT,
+  created_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_trades_user ON trades(tg_id, created_at);
 `);
 
 export async function ensureUser(from) {
@@ -34,6 +44,22 @@ export async function ensureUser(from) {
     db.prepare('INSERT INTO users (tg_id, username, created_at) VALUES (?, ?, ?)').run(from.id, from.username || '', Date.now());
   }
   return { tgId: from.id, username: from.username };
+}
+
+// Lightweight audit log of every TG-initiated mint. The chain event is
+// already canon (recorded into `positions` by mintBinary). This row exists
+// so the bot can show "trades from TG" separately from positions opened
+// by other clients later.
+export function recordTrade({ tgId, direction, strike, sizeUsdc, txDigest }) {
+  db.prepare(`INSERT INTO trades (tg_id, direction, strike, size_usdc, tx_digest, created_at)
+              VALUES (?, ?, ?, ?, ?, ?)`).run(
+    tgId, direction, Math.round(strike), sizeUsdc, txDigest, Date.now()
+  );
+}
+
+// Read a user row by TG id. Returns null if not present.
+export function getUser(tgId) {
+  return db.prepare('SELECT tg_id AS tgId, username, manager_id AS managerId, created_at FROM users WHERE tg_id = ?').get(tgId) || null;
 }
 
 export function saveKey(tgId, enc) { db.prepare('UPDATE users SET enc_key = ? WHERE tg_id = ?').run(enc, tgId); }
