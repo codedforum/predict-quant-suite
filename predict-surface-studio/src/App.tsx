@@ -9,6 +9,8 @@ import TermStructurePlot from './components/TermStructurePlot';
 import ActivityFeed from './components/ActivityFeed';
 import MarketsTable from './components/MarketsTable';
 import VolArbPlot from './components/VolArbPlot';
+import CrossFeedCard from './components/CrossFeedCard';
+import HedgeCard from './components/HedgeCard';
 import StatsRibbon from './components/StatsRibbon';
 import OpportunitiesFeed from './components/OpportunitiesFeed';
 import BotHealthCard from './components/BotHealthCard';
@@ -265,7 +267,9 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
   if (tab === 'volarb') {
     const sections = [
       { id: 'sec-stats', label: '24h stats' },
+      { id: 'sec-crossfeed', label: 'Cross-feed' },
       { id: 'sec-spread', label: 'Spread' },
+      { id: 'sec-hedge', label: 'Delta hedge' },
       { id: 'sec-backtest', label: 'Backtest' },
       { id: 'sec-opps', label: 'Opportunities' },
       { id: 'sec-vault', label: 'Vault' },
@@ -279,9 +283,17 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
             <div className="card-head"><h2>24h on-chain stats</h2><span className="meta">aggregated from settled events</span></div>
             <div className="card-body" style={{ padding: 0 }}><StatsRibbon /></div>
           </section>
+          <section id="sec-crossfeed" className="card">
+            <div className="card-head"><h2>Cross-feed</h2><span className="meta">Deribit-primary IV pair, Polymarket fallback</span></div>
+            <CrossFeedCard />
+          </section>
           <section id="sec-spread" className="card glow" style={{ minHeight: 380 }}>
-            <div className="card-head"><h2>Vol-arb spread</h2><span className="meta">Predict IV vs Polymarket BTC binary</span></div>
+            <div className="card-head"><h2>Vol-arb spread</h2><span className="meta">Predict IV vs cross-feed IV</span></div>
             <div className="card-body card-body-flex" style={{ minHeight: 320 }}><VolArbPlot /></div>
+          </section>
+          <section id="sec-hedge" className="card glow">
+            <div className="card-head"><h2>Delta hedge · Hyperliquid</h2><span className="meta">portfolio Δ offset on BTC perps</span></div>
+            <HedgeCard />
           </section>
           <section id="sec-backtest" className="card">
             <div className="card-head"><h2>Strategy backtest</h2><span className="meta">simulate signals on the spread history</span></div>

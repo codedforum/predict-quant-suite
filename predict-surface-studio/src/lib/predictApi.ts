@@ -233,6 +233,107 @@ export async function fetchActivity(): Promise<ActivityEvent[]> {
   }
 }
 
+// Cross-feed (Deribit-primary, Polymarket fallback). Added 2026-05-16.
+export interface CrossFeedSnapshot {
+  atmIv: number;
+  spot: number | null;
+  expirySec?: number;
+  expiryDriftSec?: number;
+  expiryDriftDays?: number;
+  source: 'deribit' | 'polymarket' | 'none';
+  sourceLabel: string;
+  instruments?: { name: string; strike: number; iv: number }[];
+  symbol?: string;
+  errors?: Record<string, string>;
+}
+export interface CrossFeedLogRow {
+  ts: number;
+  source: string;
+  sourceLabel: string | null;
+  iv: number | null;
+  spot: number | null;
+  expirySec: number | null;
+  expiryDriftSec: number | null;
+}
+export interface CrossFeedResponse {
+  ts: number;
+  latest: CrossFeedSnapshot;
+  recent: CrossFeedLogRow[];
+  health24h: { source: string; count: number; pct: number }[];
+}
+export async function fetchCrossFeed(): Promise<CrossFeedResponse | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/cross-feed`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`api ${r.status}`);
+    return await r.json();
+  } catch (e) { console.error('fetchCrossFeed failed', e); return null; }
+}
+
+// Delta-hedge (Hyperliquid). Added 2026-05-16.
+export interface HedgeBreakdown {
+  positionId: number | null;
+  kind: 'C' | 'P';
+  side: 'long' | 'short';
+  strike: number;
+  sizeBtc: number;
+  bsmDelta: number;
+  contribBtc: number;
+}
+export interface HedgeSnapshot {
+  enabled: boolean;
+  live: boolean;
+  ts: number;
+  spot: number;
+  positionsCount: number;
+  portfolioDelta: number;
+  hlCurrent: number;
+  hedgeTarget: number;
+  drift: number;
+  rebalanceThreshold: number;
+  action: null | {
+    side: 'BUY' | 'SELL';
+    sizeBtc: number;
+    notionalUsd: number;
+    atSpot: number;
+  };
+  breakdown: HedgeBreakdown[];
+  error?: string;
+}
+export interface HedgeHistoryRow {
+  ts: number;
+  spot: number;
+  portfolioDelta: number;
+  hlCurrent: number;
+  hedgeTarget: number;
+  drift: number;
+  actionSide: 'BUY' | 'SELL' | null;
+  actionSize: number | null;
+  live: boolean;
+}
+export interface OpenPosition {
+  id: number;
+  side: 'long' | 'short';
+  kind: 'C' | 'P';
+  strike: number;
+  expirySec: number;
+  sizeBtc: number;
+  sigma: number;
+  oracleId: string | null;
+}
+export interface HedgeResponse {
+  ts: number;
+  snapshot: HedgeSnapshot;
+  openPositions: OpenPosition[];
+  history: HedgeHistoryRow[];
+}
+export async function fetchHedge(): Promise<HedgeResponse | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/hedge`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`api ${r.status}`);
+    return await r.json();
+  } catch (e) { console.error('fetchHedge failed', e); return null; }
+}
+
 export function snapshotsFromSurface(s: SurfaceResponse): SviSnapshot[] {
   if (!s.oracles?.length) return [s.primary];
   return s.oracles.map((o) => ({
