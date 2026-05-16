@@ -179,6 +179,22 @@ app.get('/api/vault', async (req, res) => {
   }
 });
 
+// Webhook proxy - frontend POSTs the URL + payload, server forwards. Avoids browser CORS to Slack/Discord.
+app.use(express.json({ limit: '64kb' }));
+app.post('/api/webhook', async (req, res) => {
+  try {
+    const { url, text } = req.body || {};
+    if (!url || typeof url !== 'string') throw new Error('url required');
+    if (!/^https:\/\/(hooks\.slack\.com|discord(app)?\.com|discord\.com)/i.test(url)) {
+      throw new Error('only slack and discord webhooks accepted');
+    }
+    const isSlack = /hooks\.slack\.com/.test(url);
+    const body = isSlack ? { text } : { content: text };
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    res.json({ ok: r.ok, status: r.status });
+  } catch (e) { res.status(503).json({ error: e.message }); }
+});
+
 // Real on-chain order book for an oracle - calls predict::get_trade_amounts via devInspect for many strikes.
 import { Transaction } from '@mysten/sui/transactions';
 const DUSDC_TYPE = process.env.DUSDC_TYPE;
