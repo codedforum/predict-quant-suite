@@ -5,7 +5,36 @@ import { mintBinary, redeemAll, getManagerPnl } from './predict.js';
 import { faucetDusdc, ensurePredictManager } from './sui.js';
 
 const TOKEN = process.env.TG_TOKEN;
-if (!TOKEN) throw new Error('TG_TOKEN required');
+
+// Real BotFather tokens look like: `<9-11 digit numeric id>:<35-char hash>`.
+// Reject placeholders / sentinels / our own fallback strings before we hit Telegram,
+// otherwise polling spams `getUpdates` and burns rate limit.
+function looksLikeRealToken(t) {
+  if (!t || typeof t !== 'string') return false;
+  const m = /^(\d{8,12}):([A-Za-z0-9_-]{30,40})$/.exec(t.trim());
+  return Boolean(m);
+}
+
+if (!looksLikeRealToken(TOKEN)) {
+  console.error([
+    '',
+    '╔══════════════════════════════════════════════════════════════════╗',
+    '║ TG_TOKEN missing or invalid - exiting cleanly (no polling).      ║',
+    '╠══════════════════════════════════════════════════════════════════╣',
+    '║ Telegram bot tokens look like: 1234567890:AAH...35chars          ║',
+    '║                                                                  ║',
+    '║ To fix:                                                          ║',
+    '║   1. Open @BotFather on Telegram                                 ║',
+    '║   2. /newbot, choose name + username                             ║',
+    '║   3. Copy the token BotFather returns                            ║',
+    '║   4. On VPS: edit /root/predict-quant-suite/predict-tg-bot/.env  ║',
+    '║      set TG_TOKEN=<paste real token>                             ║',
+    '║   5. pm2 restart predict-tg-bot --update-env                     ║',
+    '╚══════════════════════════════════════════════════════════════════╝',
+    '',
+  ].join('\n'));
+  process.exit(0); // exit 0 so PM2 marks the process as "stopped" not "errored"
+}
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 
