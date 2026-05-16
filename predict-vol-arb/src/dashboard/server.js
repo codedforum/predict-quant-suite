@@ -2,7 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { recentQuotes, recentTrades } from '../db.js';
+import { recentQuotes, recentTrades, recentCrossFeed, crossFeedHealth, recentHedge, openPositions } from '../db.js';
+import { fetchCrossFeedAtmIv } from '../crossFeed.js';
+import { refreshHedge } from '../hedger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -597,6 +599,62 @@ app.get('/api/activity', async (req, res) => {
     const out = { ts: Date.now(), events };
     activityCache = { data: out, ts: Date.now() };
     res.json({ ...out, cache: 'miss' });
+  } catch (e) {
+    res.status(503).json({ error: e.message });
+  }
+});
+
+// Cross-feed snapshot. Returns the latest source we used, 24h source mix, and
+// the most recent IV reading. Frontend uses this to show "Deribit · 0.4d drift"
+// in the spread chart legend.
+let crossFeedCache = { data: null, ts: 0 };
+app.get('/api/cross-feed', async (req, res) => {
+  try {
+    if (Date.now() - crossFeedCache.ts < 15_000 && crossFeedCache.data) {
+      return res.json({ ...crossFeedCache.data, cache: 'hit' });
+    }
+    const targetExpirySec = req.query.expiry ? parseInt(req.query.expiry, 10) : null;
+    const snap = await fetchCrossFeedAtmIv({
+      targetExpirySec: targetExpirySec || (Math.floor(Date.now() / 1000) + 36 * 3600),
+      symbol: 'BTC',
+    });
+    const recent = recentCrossFeed(120);
+    const health = crossFeedHealth();
+    const out = {
+      ts: Date.now(),
+      latest: snap,
+      recent: recent.map((r) => ({
+        ts: r.ts, source: r.source, sourceLabel: r.source_label, iv: r.iv, spot: r.spot,
+        expirySec: r.expiry_sec, expiryDriftSec: r.expiry_drift_sec,
+      })),
+      health24h: health,
+    };
+    crossFeedCache = { data: out, ts: Date.now() };
+    res.json({ ...out, cache: 'miss' });
+  } catch (e) {
+    res.status(503).json({ error: e.message });
+  }
+});
+
+// Delta-hedge snapshot. Live BTC mid from Hyperliquid, portfolio delta
+// computed from open Predict positions, signed hedge target on HL perps,
+// and the recent action log. Refreshes on demand (every call, no cache)
+// since latency matters for hedging.
+app.get('/api/hedge', async (req, res) => {
+  try {
+    const snap = await refreshHedge();
+    const history = recentHedge(60);
+    const open = openPositions();
+    res.json({
+      ts: Date.now(),
+      snapshot: snap,
+      openPositions: open,
+      history: history.map((h) => ({
+        ts: h.ts, spot: h.spot, portfolioDelta: h.portfolio_delta,
+        hlCurrent: h.hl_current, hedgeTarget: h.hedge_target, drift: h.drift,
+        actionSide: h.action_side, actionSize: h.action_size, live: !!h.live,
+      })),
+    });
   } catch (e) {
     res.status(503).json({ error: e.message });
   }
