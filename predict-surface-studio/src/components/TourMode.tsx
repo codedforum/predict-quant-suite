@@ -1,32 +1,41 @@
 import { useEffect, useState } from 'react';
 
-interface Step { selector?: string; title: string; body: string }
+interface Step { selector?: string; title: string; body: string; tab?: string }
 
 const STEPS: Step[] = [
-  { title: 'Welcome to Predict Quant Suite', body: 'Live volatility tooling for DeepBook Predict on Sui. Hover the volatility surface to see strike, expiry, and implied vol at any point.' },
-  { selector: '.tabs-row .tab', title: 'Six tabs', body: 'Surface (3D + heatmap), Smile (per-expiry vol), Term (vol vs days), Vol-Arb (Predict vs Polymarket), Activity (events feed), Markets (oracle table).' },
-  { selector: '.surface-controls', title: 'Surface controls', body: 'Camera presets (perspective / top / side / front), auto-rotate, wireframe, resolution. Press R to reset, A for rotate, W for wireframe. Drag with one finger or mouse to orbit, pinch or scroll to zoom.' },
-  { selector: '.iv-legend', title: 'Color legend', body: 'Cool blue = low IV, hot red = high IV. The mini-bar shows the IV range across the visible surface.' },
-  { selector: '.btn-primary', title: 'Trade calculator', body: 'Open with C anywhere. Pick CALL / PUT / RANGE, see live cost, ITM probability, payoff diagram, and Greeks (delta, vega, theta) computed against the live SVI surface.' },
-  { selector: '.icon-btn', title: 'About + keyboard shortcuts', body: 'Press ? to open the about modal. 1-5 switch tabs. Esc closes overlays.' },
-  { title: 'Done', body: 'Everything is read-only. No wallet connection needed. The frontend never signs anything; trading happens via the calculator + (optionally) the Telegram bot.' },
+  { title: 'Welcome to Predict Quant Suite', body: 'Live volatility tooling for DeepBook Predict on Sui. Six tabs, calculator, oracle drilldowns, wallet lookup, on-chain orderbook, vol-arb signals. Use arrow keys to navigate, esc to skip.' },
+  { tab: 'surface', selector: '.surface-controls', title: 'Surface tab · 3D viewer', body: 'IV / Δ / ν / Γ surfaces, camera presets, auto-rotate, wireframe, HD/std/low resolution, PNG download, Twitter share. Press R to reset, A to toggle rotate, W for wireframe.' },
+  { tab: 'surface', selector: '.iv-legend', title: 'Color legend', body: 'Cool blue = low metric value, hot red = high. Bar shows the visible range across the surface.' },
+  { tab: 'smile', selector: '.tab-panel', title: 'Smile tab', body: 'Overlay every oracle smile on one chart, then compare any two side-by-side with a delta column.' },
+  { tab: 'term', selector: '.tab-panel', title: 'Term tab', body: 'ATM and 25-delta wing IV across days-to-expiry, plus a volatility cone comparing realized BTC vol vs implied vol.' },
+  { tab: 'volarb', selector: '.spy-nav', title: 'Vol-Arb tab', body: '24h stats, spread chart, backtest, live opportunities, bot health, on-chain vault, wallet lookup, Telegram bot. Right rail jumps between sections.' },
+  { tab: 'activity', selector: '.tab-panel', title: 'Activity tab', body: 'Recent on-chain events, leaderboard with the #1 traders equity curve, plus a 7-day day-of-week x hour-of-day mint heatmap.' },
+  { tab: 'markets', selector: '.tab-panel', title: 'Markets tab', body: 'Sortable oracle table, real on-chain order book with edge column (chain vs SVI fair value), and a per-strike trade flow histogram.' },
+  { selector: '.btn-primary', title: 'Trade calculator', body: 'Open anywhere with C. Pick CALL/PUT/RANGE, see cost, ITM probability, payoff diagram, and Greeks against the live SVI surface.' },
+  { title: 'Done', body: 'Read-only frontend. No wallet connection needed. Press ? for the about modal anytime, or click ⚙ for settings (compact density, webhook alerts).' },
 ];
 
 const STORAGE_KEY = 'pqs-tour-v1';
 
-export default function TourMode({ open, onClose }: { open: boolean; onClose: () => void }) {
+interface Props { open: boolean; onClose: () => void; onTabChange?: (t: string) => void }
+
+export default function TourMode({ open, onClose, onTabChange }: Props) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const s = STEPS[step];
-    if (!s.selector) { setRect(null); return; }
-    const el = document.querySelector(s.selector) as HTMLElement | null;
-    if (!el) { setRect(null); return; }
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => setRect(el.getBoundingClientRect()), 200);
-  }, [open, step]);
+    if (s.tab && onTabChange) onTabChange(s.tab);
+    const after = s.tab ? 280 : 0;
+    setTimeout(() => {
+      if (!s.selector) { setRect(null); return; }
+      const el = document.querySelector(s.selector) as HTMLElement | null;
+      if (!el) { setRect(null); return; }
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => setRect(el.getBoundingClientRect()), 250);
+    }, after);
+  }, [open, step, onTabChange]);
 
   useEffect(() => {
     if (!open) return;
