@@ -57,6 +57,23 @@ export function markRedeemed(positionId, payout) {
   db.prepare(`UPDATE positions SET status = 'redeemed', redeemed_payout = ? WHERE id = ?`).run(payout, positionId);
 }
 
+// Aggregate realized PnL + open count for a single user. Used by /pnl.
+export function userStats(tgId) {
+  const realizedRow = db.prepare(`
+    SELECT COALESCE(SUM(redeemed_payout - cost), 0) AS realized_raw
+    FROM positions WHERE tg_id = ? AND status = 'redeemed'
+  `).get(tgId);
+  const openRow = db.prepare(`
+    SELECT COUNT(*) AS open_count, COALESCE(SUM(cost), 0) AS open_cost_raw
+    FROM positions WHERE tg_id = ? AND status = 'open'
+  `).get(tgId);
+  return {
+    realized: (realizedRow?.realized_raw ?? 0) / 1_000_000,
+    open: openRow?.open_count ?? 0,
+    openCost: (openRow?.open_cost_raw ?? 0) / 1_000_000,
+  };
+}
+
 export function topUsers(n = 10) {
   return db.prepare(`
     SELECT u.tg_id AS tgId, u.username,
