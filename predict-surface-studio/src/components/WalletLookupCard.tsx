@@ -1,24 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { fetchPositions, PositionsLookup } from '../lib/predictApi';
 import EquityCurve from './EquityCurve';
 
+// A ?addr=0x... query param (sent by the Telegram bot's "View on web terminal"
+// deep link) prefills the lookup and runs it automatically, then scrolls here.
+function addrFromUrl(): string {
+  if (typeof location === 'undefined') return '';
+  const a = new URLSearchParams(location.search).get('addr') || '';
+  return /^0x[0-9a-fA-F]{6,}$/.test(a) ? a : '';
+}
+
 export default function WalletLookupCard() {
-  const [addr, setAddr] = useState('');
+  const [addr, setAddr] = useState(addrFromUrl());
   const [data, setData] = useState<PositionsLookup | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
 
-  async function lookup() {
-    if (!addr.startsWith('0x') || addr.length < 40) { setErr('Enter a valid Sui address (0x...)'); return; }
+  async function lookup(address: string = addr) {
+    if (!address.startsWith('0x') || address.length < 40) { setErr('Enter a valid Sui address (0x...)'); return; }
     setErr(null); setLoading(true); setData(null);
-    const r = await fetchPositions(addr);
+    const r = await fetchPositions(address);
     setLoading(false);
     if (!r) { setErr('Could not look up positions'); return; }
     setData(r);
   }
 
+  useEffect(() => {
+    const a = addrFromUrl();
+    if (!a) return;
+    lookup(a);
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div className="card-body" ref={ref} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', gap: 8 }}>
         <input
           type="text"
@@ -28,7 +45,7 @@ export default function WalletLookupCard() {
           onKeyDown={(e) => e.key === 'Enter' && lookup()}
           style={{ flex: 1, background: 'var(--bg)', color: 'var(--t1)', border: '1px solid var(--border-2)', borderRadius: 8, padding: '10px 12px', fontFamily: 'var(--mono)', fontSize: 12, outline: 'none' }}
         />
-        <button className="btn btn-primary" onClick={lookup} disabled={loading}>{loading ? '...' : 'Lookup'}</button>
+        <button className="btn btn-primary" onClick={() => lookup()} disabled={loading}>{loading ? '...' : 'Lookup'}</button>
       </div>
 
       {err && <div style={{ color: 'var(--red)', fontSize: 12 }}>{err}</div>}

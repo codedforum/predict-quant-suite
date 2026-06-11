@@ -13,24 +13,21 @@ const commands = [
   { command: 'up', description: '📈 Bet BTC finishes above a strike' },
   { command: 'down', description: '📉 Bet BTC finishes below a strike' },
   { command: 'positions', description: '📋 Your open positions' },
-  { command: 'redeem', description: '💰 Redeem and cash out positions' },
-  { command: 'pnl', description: '📊 Your profit and loss' },
-  { command: 'price', description: '🔮 Live BTC, ETH, SOL, SUI prices' },
+  { command: 'redeem', description: '💰 Redeem and cash out to your wallet' },
+  { command: 'pnl', description: '📊 Your balance, equity and PnL' },
+  { command: 'price', description: '💹 Live BTC, ETH, SOL, SUI prices' },
   { command: 'leaderboard', description: '🏆 Top traders this week' },
-  { command: 'worldcup', description: '⚽ World Cup pick em game' },
-  { command: 'mypicks', description: '🎟 Your World Cup picks' },
-  { command: 'wcboard', description: '🥇 World Cup pick em leaderboard' },
   { command: 'export', description: '🔑 Export your wallet private key' },
-  { command: 'help', description: 'ℹ️ How it all works' },
+  { command: 'help', description: 'ℹ️ Full guide and the web terminal' },
 ];
 
-const short = 'On-chain BTC up or down options on Sui testnet, plus a World Cup pick em game. Your own self custody wallet.';
+const short = 'On-chain BTC up or down options on Sui testnet. Real trades, self custody wallet, live web analytics terminal.';
 const about = [
   'Predict on-chain with DeepBook Predict on Sui testnet.',
   '',
-  'Tap up or down on BTC, mint a real position, redeem for profit. Every bot user gets a self custody wallet and a one time faucet of testnet dUSDC and gas.',
+  'Tap up or down on BTC, mint a real position, redeem the payout back to your wallet. Every user gets a self custody Sui wallet and a one time faucet of testnet dUSDC and gas.',
   '',
-  'Bonus: a World Cup pick em points game, auto settled when each match ends.',
+  'Companion web terminal at predict.smartcodedbot.com: live 3D volatility surface and analytics for the same on-chain market.',
   '',
   'Built for Sui Overflow 2026 by SmartCodedBot.',
 ].join('\n');

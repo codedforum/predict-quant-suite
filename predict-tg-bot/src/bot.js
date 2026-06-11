@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
-import { ensureUser, recordTrade, topUsers, openPositions, savePick, getUserPicks, settleMatch, wcLeaderboard } from './db.js';
+import { ensureUser, recordTrade, topUsers, openPositions } from './db.js';
 import { mintBinary, redeemAll, getManagerPnl } from './predict.js';
 import { faucetDusdc, ensurePredictManager, fetchLiveOracle, getUsdcBalance, getOrCreateKeypair, quoteStrike } from './sui.js';
 
@@ -38,12 +38,18 @@ async function fetchPrices() {
 }
 
 // ── home + welcome ──
+// The web terminal (predict.smartcodedbot.com) and this bot share the SAME
+// on-chain market and backend (predict-api.smartcodedbot.com). You analyze on
+// the web, you trade here. webLink deep-links a user straight to their own
+// positions in the web terminal's wallet lookup.
+const SITE = 'https://predict.smartcodedbot.com';
+const webLink = (addr) => (addr ? `${SITE}/?addr=${addr}#volarb` : `${SITE}#volarb`);
 const homeKb = () => ({ inline_keyboard: [
   [{ text: '💧 Get testnet funds', callback_data: 'do_faucet' }],
   [{ text: '📈 Trade Up', callback_data: 'do_up' }, { text: '📉 Trade Down', callback_data: 'do_down' }],
   [{ text: '📊 My PnL', callback_data: 'do_pnl' }, { text: '📋 Positions', callback_data: 'do_pos' }],
   [{ text: '💹 Prices', callback_data: 'do_price' }, { text: '🏆 Leaderboard', callback_data: 'do_lb' }],
-  [{ text: '⚽ World Cup pick’em', callback_data: 'do_wc' }],
+  [{ text: '🌐 Web terminal', url: SITE }],
 ] });
 const WELCOME = [
   '🔮 <b>Predict Quant Bot</b>',
@@ -53,15 +59,39 @@ const WELCOME = [
   '<b>1.</b> <code>/faucet</code>  get free testnet dUSDC and gas, one time',
   '<b>2.</b> <code>/up</code> or <code>/down</code>  open a BTC position in a few taps',
   '<b>3.</b> <code>/pnl</code>  track your positions and profit',
-  '<b>4.</b> <code>/redeem</code>  claim settled payouts',
+  '<b>4.</b> <code>/redeem</code>  cash out settled payouts to your wallet',
   '',
-  '⚽ <b>Bonus:</b> <code>/worldcup</code>  predict 2026 World Cup matches and climb the leaderboard.',
+  '🌐 <b>Web terminal:</b> the live 3D volatility surface and analytics for this exact market live at predict.smartcodedbot.com. Same on-chain oracle, you trade here and analyze there.',
   '',
   '<i>Self custody. The bot creates a Sui wallet that you own, and everything settles on-chain.</i>',
   '',
-  'Tap a button below to begin.',
+  'Tap a button below to begin, or <code>/help</code> for the full guide.',
 ].join('\n');
-bot.onText(/^\/(start|help)/, (msg) => safe(msg.chat.id, async () => { await ensureUser(msg.from); await send(msg.chat.id, WELCOME, homeKb()); }));
+const HELP = [
+  'ℹ️ <b>Predict Quant Bot, full guide</b>',
+  '',
+  '<b>The market</b>',
+  'DeepBook Predict is an on-chain options market on Sui. Each market is a BTC binary: pick a strike and a direction, and you win if BTC finishes on your side at expiry. Pricing comes from a live on-chain oracle.',
+  '',
+  '<b>Commands</b>',
+  '<code>/faucet</code>  one-time testnet funds, 3 dUSDC and gas',
+  '<code>/up</code>  bet BTC finishes <b>above</b> a strike (CALL)',
+  '<code>/down</code>  bet BTC finishes <b>below</b> a strike (PUT)',
+  '<code>/positions</code>  your open positions and time to expiry',
+  '<code>/redeem</code>  settle and sweep payouts to your wallet',
+  '<code>/pnl</code>  wallet balance, equity and realized PnL',
+  '<code>/price</code>  live BTC, ETH, SOL and SUI prices',
+  '<code>/leaderboard</code>  top traders this week',
+  '<code>/export</code>  export your wallet private key',
+  '',
+  '<b>Your wallet</b>',
+  'On first use the bot creates a Sui wallet only you control. Use <code>/export</code> to import it into Slush or the Sui Wallet anytime. Self custody, always.',
+  '',
+  '<b>The web terminal</b>',
+  'predict.smartcodedbot.com is the analytics companion to this bot. It reads the same on-chain market: a live 3D volatility surface, a vol-arb keeper, and a wallet lookup that shows your own positions. Open <code>/pnl</code> and tap "View on web terminal" to jump straight to yours.',
+].join('\n');
+bot.onText(/^\/start/, (msg) => safe(msg.chat.id, async () => { await ensureUser(msg.from); await send(msg.chat.id, WELCOME, homeKb()); }));
+bot.onText(/^\/help/, (msg) => safe(msg.chat.id, async () => { await ensureUser(msg.from); await send(msg.chat.id, HELP, homeKb()); }));
 
 // ── /faucet ──
 async function doFaucet(chatId, from) {
@@ -113,15 +143,23 @@ async function doPnl(chatId, from) {
     `Wallet balance: <b>${bal.toFixed(2)} dUSDC</b>`,
     `In-protocol equity: <b>${equity.toFixed(2)} dUSDC</b>`,
     `Open positions: <b>${open}</b>`,
-    `Realized PnL: <b>${realized >= 0 ? '' : ''}${realized.toFixed(2)} dUSDC</b>`,
-  ].join('\n'), { inline_keyboard: [[{ text: '📋 Positions', callback_data: 'do_pos' }, { text: '💰 Redeem', callback_data: 'do_redeem' }], [{ text: '🔑 Export wallet', callback_data: 'do_export' }]] });
+    `Realized PnL: <b>${realized.toFixed(2)} dUSDC</b>`,
+  ].join('\n'), { inline_keyboard: [
+    [{ text: '📋 Positions', callback_data: 'do_pos' }, { text: '💰 Redeem', callback_data: 'do_redeem' }],
+    [{ text: '🌐 View on web terminal', url: webLink(addr) }],
+    [{ text: '🔑 Export wallet', callback_data: 'do_export' }],
+  ] });
 }
 async function doPositions(chatId, from) {
   const user = await ensureUser(from);
+  const addr = getOrCreateKeypair(user).toSuiAddress();
   const pos = openPositions(user.tgId);
   if (!pos.length) return send(chatId, '📋 <b>No open positions.</b>\nOpen one with 📈 Trade Up or 📉 Trade Down.', homeKb());
-  const lines = pos.map((p) => `${p.isUp ? '📈 CALL' : '📉 PUT'}  <b>$${(p.strike / 1e9 / 1000).toFixed(0)}k</b>  ·  cost <b>${(p.cost / 1e6).toFixed(2)}</b> dUSDC`);
-  await send(chatId, `📋 <b>Open positions (${pos.length})</b>\n${lines.join('\n')}`, { inline_keyboard: [[{ text: '💰 Redeem settled', callback_data: 'do_redeem' }]] });
+  const lines = pos.map((p) => `${p.isUp ? '📈 CALL' : '📉 PUT'}  <b>$${(p.strike / 1e9 / 1000).toFixed(0)}k</b>  ·  cost <b>${(p.cost / 1e6).toFixed(2)}</b> dUSDC  ·  settles in <b>${expiryIn(p.expiry)}</b>`);
+  await send(chatId, `📋 <b>Open positions (${pos.length})</b>\n${lines.join('\n')}`, { inline_keyboard: [
+    [{ text: '💰 Redeem settled', callback_data: 'do_redeem' }],
+    [{ text: '🌐 View on web terminal', url: webLink(addr) }],
+  ] });
 }
 async function doRedeem(chatId, from) {
   const user = await ensureUser(from);
@@ -148,7 +186,7 @@ async function doPrice(chatId) {
 }
 async function doLeaderboard(chatId) {
   const rows = topUsers(10);
-  const body = rows.length ? rows.map((r, i) => `${['🥇', '🥈', '🥉'][i] || `${i + 1}.`} @${esc(r.username || r.tgId)}  <b>${r.realized >= 0 ? '' : ''}${r.realized.toFixed(2)}</b> dUSDC  <i>(${r.trades})</i>`).join('\n') : 'No trades yet. Be the first.';
+  const body = rows.length ? rows.map((r, i) => `${['🥇', '🥈', '🥉'][i] || `${i + 1}.`} @${esc(r.username || r.tgId)}  <b>${r.realized.toFixed(2)}</b> dUSDC  <i>(${r.trades} trades)</i>`).join('\n') : 'No trades yet. Be the first.';
   await send(chatId, `🏆 <b>Top traders</b> <i>(7d)</i>\n${body}`);
 }
 bot.onText(/^\/pnl/, (msg) => safe(msg.chat.id, () => doPnl(msg.chat.id, msg.from)));
@@ -186,15 +224,6 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
   if (data === 'do_price') return doPrice(chatId);
   if (data === 'do_lb') return doLeaderboard(chatId);
   if (data === 'do_export') return doExport(chatId, q.from, q.message.chat.type);
-  if (data === 'do_wc') return doWorldCup(chatId, q.from);
-  if (data === 'do_mypicks') return doMyPicks(chatId, q.from);
-  if (data === 'do_wcb') return doWcBoard(chatId);
-  if (data.startsWith('wc:')) {
-    const [, eid, pick] = data.split(':');
-    await ensureUser(q.from);
-    savePick(q.from.id, eid, wcCache[eid]?.name || 'match', pick);
-    return send(chatId, `✅ Pick saved: <b>${esc(pickLabel(eid, pick))}</b> for <b>${esc(wcCache[eid]?.name || 'the match')}</b>.\nAuto-settles when the match ends.`, { inline_keyboard: [[{ text: '📋 My picks', callback_data: 'do_mypicks' }, { text: '⚽ More', callback_data: 'do_wc' }]] });
-  }
 
   const w = wiz[q.from.id];
   if (data.startsWith('w_strike:')) {
@@ -235,71 +264,11 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
       '✅ <b>Position opened</b>',
       `${w.direction === 'CALL' ? '📈 CALL' : '📉 PUT'} BTC <b>$${(w.strike / 1000).toFixed(0)}k</b> for <b>${w.size} dUSDC</b>`,
       `<a href="${SUISCAN(tx.digest)}">view on-chain</a>`,
-    ].join('\n'), { inline_keyboard: [[{ text: '📊 My PnL', callback_data: 'do_pnl' }, { text: '📈 Trade again', callback_data: 'do_up' }]] });
+    ].join('\n'), { inline_keyboard: [
+      [{ text: '📊 My PnL', callback_data: 'do_pnl' }, { text: '📈 Trade again', callback_data: 'do_up' }],
+      [{ text: '🌐 View on web terminal', url: webLink(addr) }],
+    ] });
   }
 }));
 
-// ── World Cup pick'em (off-chain game, auto-settled from TheSportsDB free API) ──
-const WC_API = 'https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4429&s=2026';
-const wcCache = {};
-async function fetchWcMatches() {
-  const d = await (await fetch(WC_API, { signal: AbortSignal.timeout(12000) })).json();
-  return (d.events || []).map((e) => {
-    const m = {
-      id: e.idEvent, name: e.strEvent, homeTeam: e.strHomeTeam || 'Home', awayTeam: e.strAwayTeam || 'Away',
-      date: (e.dateEvent || '') + (e.strTime ? ' ' + String(e.strTime).slice(0, 5) + ' UTC' : ''),
-      status: e.strStatus,
-      home: e.intHomeScore != null ? parseInt(e.intHomeScore, 10) : null,
-      away: e.intAwayScore != null ? parseInt(e.intAwayScore, 10) : null,
-    };
-    wcCache[m.id] = { name: m.name, home: m.homeTeam, away: m.awayTeam };
-    return m;
-  });
-}
-const pickLabel = (eid, pick) => { const c = wcCache[eid] || {}; return pick === 'HOME' ? (c.home || 'Home') : pick === 'AWAY' ? (c.away || 'Away') : 'Draw'; };
-async function doWorldCup(chatId, from) {
-  await ensureUser(from);
-  await send(chatId, '⚽ <i>Loading World Cup fixtures…</i>');
-  const up = (await fetchWcMatches()).filter((m) => m.status === 'NS').slice(0, 6);
-  if (!up.length) return send(chatId, '⚽ <b>No upcoming World Cup matches right now.</b> Check back soon.', homeKb());
-  await send(chatId, ['🏆 <b>World Cup pick’em</b>', 'Predict the result, correct picks earn <b>3 points</b>, auto-settled when the match ends.', '', 'Pick below:'].join('\n'));
-  for (const m of up) {
-    await send(chatId, `<b>${esc(m.homeTeam)}</b> vs <b>${esc(m.awayTeam)}</b>\n<i>${esc(m.date)}</i>`, { inline_keyboard: [[
-      { text: '🏠 ' + m.homeTeam.slice(0, 11), callback_data: `wc:${m.id}:HOME` },
-      { text: '🤝 Draw', callback_data: `wc:${m.id}:DRAW` },
-      { text: m.awayTeam.slice(0, 11) + ' ✈', callback_data: `wc:${m.id}:AWAY` },
-    ]] });
-  }
-}
-async function doMyPicks(chatId, from) {
-  await ensureUser(from);
-  const picks = getUserPicks(from.id);
-  if (!picks.length) return send(chatId, '📋 <b>No World Cup picks yet.</b>\nTap ⚽ World Cup to predict.', homeKb());
-  const lines = picks.map((p) => `${p.settled ? (p.correct ? '✅ 3 pts' : '❌ 0 pts') : '⏳ open'}  <b>${esc(p.eventName)}</b>, pick: ${esc(pickLabel(p.eventId, p.pick))}`);
-  await send(chatId, `📋 <b>Your World Cup picks</b>\n${lines.join('\n')}`, { inline_keyboard: [[{ text: '⚽ More matches', callback_data: 'do_wc' }, { text: '🏆 WC board', callback_data: 'do_wcb' }]] });
-}
-async function doWcBoard(chatId) {
-  const rows = wcLeaderboard(10);
-  const body = rows.length ? rows.map((r, i) => `${['🥇', '🥈', '🥉'][i] || `${i + 1}.`} @${esc(r.username || r.tgId)}  <b>${r.points} pts</b>  <i>(${r.picks})</i>`).join('\n') : 'No picks settled yet, be the first.';
-  await send(chatId, `🏆 <b>World Cup leaderboard</b>\n${body}`);
-}
-let wcRunning = false;
-async function settleWorldCup() {
-  if (wcRunning) return; wcRunning = true;
-  try {
-    for (const m of await fetchWcMatches()) {
-      if (m.status === 'FT' && m.home != null && m.away != null) {
-        const result = m.home > m.away ? 'HOME' : m.away > m.home ? 'AWAY' : 'DRAW';
-        const n = settleMatch(m.id, result);
-        if (n) console.log(`[wc] settled ${n} pick(s) on ${m.name} -> ${result}`);
-      }
-    }
-  } catch (e) { console.warn('[wc settle]', e?.message); } finally { wcRunning = false; }
-}
-bot.onText(/^\/worldcup/, (msg) => safe(msg.chat.id, () => doWorldCup(msg.chat.id, msg.from)));
-bot.onText(/^\/mypicks/, (msg) => safe(msg.chat.id, () => doMyPicks(msg.chat.id, msg.from)));
-bot.onText(/^\/wcboard/, (msg) => safe(msg.chat.id, () => doWcBoard(msg.chat.id)));
-setInterval(settleWorldCup, 20 * 60 * 1000);
-setTimeout(settleWorldCup, 8000);
-
-console.log('predict-tg-bot up (HTML wizard, faucet, price, positions, world cup pickem)');
+console.log('predict-tg-bot up (HTML wizard, faucet, trade, positions, redeem, prices, leaderboard)');

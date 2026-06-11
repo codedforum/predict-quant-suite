@@ -423,7 +423,7 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
           <section className="card glow surface-hero">
             <div className="card-head">
               <div className="ch-title"><h2>Vol-Arb Engine</h2><span className="hero-tag">Predict IV vs cross-feed · keeper</span></div>
-              <a className="meta oracle-id-link" href="https://predict-api.smartcodedbot.com" target="_blank" rel="noreferrer">live dashboard →</a>
+              <a className="meta oracle-id-link" href="https://predict-api.smartcodedbot.com" target="_blank" rel="noreferrer">keeper dashboard →</a>
             </div>
             <MetricBar items={[
               { l: 'Mode', v: 'DRY-RUN', accent: true },

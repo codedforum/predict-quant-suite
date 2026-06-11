@@ -2,46 +2,57 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Predict Vol-Arb · DeepBook on Sui</title>
+<title>Predict Quant Suite · Vol-Arb Keeper</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="theme-color" content="#060d1a" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234da2ff'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='34' font-weight='800' fill='%23fff' font-family='sans-serif'%3E%CF%83%3C/text%3E%3C/svg%3E" />
+<meta name="theme-color" content="#040508" />
+<meta name="description" content="Live ops dashboard for the Predict Quant Suite vol-arb keeper on Sui testnet. The trading terminal lives at predict.smartcodedbot.com." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232b7fff'/%3E%3Cstop offset='1' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23b)'/%3E%3Cpath d='M14 24 Q 32 47 50 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round'/%3E%3Ccircle cx='14' cy='24' r='3.6' fill='%23fff'/%3E%3Ccircle cx='32' cy='40' r='3.6' fill='%23fff'/%3E%3Ccircle cx='50' cy='24' r='3.6' fill='%23fff'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
 <style>
   :root{
-    --bg:#060d1a; --bg2:#03070f; --card:#0c1424; --elev:#0e1828; --elev2:#14223a;
-    --t1:#eef3fb; --t2:#98a6bf; --t3:#5b6883;
-    --border:rgba(150,175,225,.10); --border2:rgba(77,162,255,.32);
-    --blue:#4da2ff; --blue-d:#2b7fff; --blue-l:#7dc0ff; --glow:rgba(77,162,255,.28);
-    --green:#34d399; --red:#fb6f84; --cyan:#22d3ee; --yellow:#fbbf24;
-    --sg:'Space Grotesk',system-ui,sans-serif; --inter:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+    --bg:#07080c; --bg-deep:#040508; --card:#0d0f15; --card-2:#12151d; --elev:#10131a; --elev2:#171b24;
+    --t1:#f4f6fa; --t2:#9aa4b4; --t3:#5c6474;
+    --border:rgba(255,255,255,.08); --border2:rgba(77,162,255,.38);
+    --blue:#4da2ff; --blue-d:#2b7fff; --blue-l:#8ac4ff; --glow:rgba(77,162,255,.30);
+    --cyan:#22d3ee; --orange:#f97316; --green:#2ee6a8; --red:#ff5c7a; --yellow:#ffc24d;
+    --beam:linear-gradient(120deg,#2b7fff 0%,#4da2ff 48%,#22d3ee 100%);
+    --sg:'Sora','Space Grotesk',system-ui,sans-serif; --inter:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg2);color:var(--t1);font-family:var(--inter);-webkit-font-smoothing:antialiased;min-height:100vh}
+  body{margin:0;background:var(--bg-deep);color:var(--t1);font-family:var(--inter);-webkit-font-smoothing:antialiased;min-height:100vh}
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-    background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(77,162,255,.16),transparent 60%),radial-gradient(ellipse 60% 40% at 85% 110%,rgba(77,162,255,.08),transparent 60%)}
-  .wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 18px 72px}
+    background:radial-gradient(ellipse 76% 48% at 50% -12%,rgba(77,162,255,.16),transparent 60%),radial-gradient(ellipse 56% 40% at 88% 112%,rgba(34,211,238,.09),transparent 60%)}
+  .wrap{position:relative;z-index:1;max-width:1220px;margin:0 auto;padding:0 18px 72px}
   header{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:14px;
-    padding:16px 18px;margin:0 -18px 22px;background:linear-gradient(180deg,rgba(8,16,30,.94),rgba(8,16,30,.74));
-    backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+    padding:15px 18px;margin:0 -18px 0;background:linear-gradient(180deg,rgba(7,8,12,.95),rgba(7,8,12,.72));
+    backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
   .brand{display:flex;align-items:center;gap:12px}
-  .mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-family:var(--sg);font-weight:800;font-size:19px;color:#fff;
-    background:linear-gradient(135deg,var(--blue-d),var(--blue),var(--blue-l));box-shadow:0 6px 22px var(--glow),inset 0 1px 0 rgba(255,255,255,.25)}
-  .brand b{font-family:var(--sg);font-size:16px;letter-spacing:-.02em;display:block}
+  .mark{width:40px;height:40px;border-radius:13px;box-shadow:0 6px 22px var(--glow),inset 0 1px 0 rgba(255,255,255,.22)}
+  .brand b{font-family:var(--sg);font-size:16px;font-weight:800;letter-spacing:-.02em;display:block}
   .brand span{font-family:var(--mono);font-size:11px;color:var(--t2)}
-  .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .right{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
   .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;font-family:var(--mono);font-size:12px;font-weight:500;
     background:var(--elev);border:1px solid var(--border)}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--t3)}
   .dot.live{background:var(--green);animation:pulse 2s infinite}
   .dot.dry{background:var(--yellow)} .dot.off{background:var(--red)}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
-  .cta{font-family:var(--sg);font-weight:700;font-size:13px;color:#fff;text-decoration:none;padding:8px 15px;border-radius:10px;
-    background:linear-gradient(135deg,var(--blue-d),var(--blue));box-shadow:0 6px 20px var(--glow),inset 0 1px 0 rgba(255,255,255,.18)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:14px}
-  .stat{background:linear-gradient(180deg,var(--elev),var(--card));border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,230,168,.5)}70%{box-shadow:0 0 0 7px rgba(46,230,168,0)}100%{box-shadow:0 0 0 0 rgba(46,230,168,0)}}
+  .cta{font-family:var(--sg);font-weight:700;font-size:13px;color:#fff;text-decoration:none;padding:9px 15px;border-radius:11px;
+    background:var(--beam);box-shadow:0 6px 20px var(--glow),inset 0 1px 0 rgba(255,255,255,.18);white-space:nowrap}
+  .cta.ghost{background:var(--elev);border:1px solid var(--border2);color:var(--blue-l);box-shadow:none}
+  /* context strip: answers "what am I looking at" */
+  .ctx{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0 20px;padding:13px 16px;border-radius:14px;
+    background:linear-gradient(180deg,rgba(77,162,255,.06),transparent),var(--card);border:1px solid var(--border)}
+  .ctx .tag{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#fff;
+    padding:5px 10px;border-radius:7px;background:var(--beam)}
+  .ctx p{margin:0;font-size:13px;color:var(--t2);line-height:1.55}
+  .ctx a{color:var(--blue-l);text-decoration:none;font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;margin-bottom:14px}
+  .stat{background:linear-gradient(180deg,var(--elev2),var(--card));border:1px solid var(--border);border-radius:15px;padding:15px 17px;position:relative;overflow:hidden}
+  .stat::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--beam);opacity:0;transition:opacity .2s}
+  .stat:hover::after{opacity:.7}
   .stat .l{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
   .stat .v{font-family:var(--sg);font-weight:800;font-size:26px;margin-top:7px;font-variant-numeric:tabular-nums;
     background:linear-gradient(135deg,#fff,var(--blue-l));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -63,30 +74,44 @@
   .legend{display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--t2);font-weight:400;letter-spacing:0;text-transform:none}
   .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
   .empty{color:var(--t3);font-family:var(--mono);font-size:12px;padding:18px 8px;text-align:center}
-  footer{margin-top:24px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--t3)}
+  footer{margin-top:28px;padding-top:18px;border-top:1px solid var(--border);text-align:center;font-family:var(--mono);font-size:11px;color:var(--t3);line-height:1.9}
   footer a{color:var(--blue);text-decoration:none}
+  footer .sep{color:var(--t3);opacity:.5;margin:0 8px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">
-      <div class="mark">σ</div>
-      <div><b>Predict Vol-Arb</b><span>DeepBook on Sui · keeper</span></div>
+      <svg class="mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Predict Quant Suite">
+        <defs><linearGradient id="bm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b7fff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs>
+        <rect width="64" height="64" rx="16" fill="url(#bm)"/>
+        <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#fff" stroke-opacity="0.18"/>
+        <path d="M16 34 Q 32 50 48 34" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.38"/>
+        <path d="M14 24 Q 32 47 50 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+        <circle cx="14" cy="24" r="3.6" fill="#fff"/><circle cx="32" cy="40" r="3.6" fill="#fff"/><circle cx="50" cy="24" r="3.6" fill="#fff"/>
+      </svg>
+      <div><b>Predict Quant Suite</b><span>Vol-Arb Keeper · live ops</span></div>
     </div>
     <div class="right">
       <span class="pill"><span id="modeDot" class="dot"></span><span id="modeText">connecting</span></span>
       <span class="pill">pnl <span id="pnl" class="muted">--</span></span>
-      <a class="cta" href="https://predict.smartcoded.xyz" target="_blank" rel="noopener">Open Surface Studio →</a>
+      <a class="cta ghost" href="https://t.me/TheSmartPredictBot" target="_blank" rel="noopener">Telegram bot</a>
+      <a class="cta" href="https://predict.smartcodedbot.com" target="_blank" rel="noopener">Open trading terminal →</a>
     </div>
   </header>
+
+  <div class="ctx">
+    <span class="tag">Keeper API</span>
+    <p>You are looking at the <b>vol-arb keeper</b> for Predict Quant Suite, the engine that prices Predict IV against a cross-feed and serves the live <a href="/api/health" target="_blank">/api</a> the apps read. To <b>trade</b>, open the <a href="https://predict.smartcodedbot.com">trading terminal</a> or the <a href="https://t.me/TheSmartPredictBot">Telegram bot</a>.</p>
+  </div>
 
   <div class="grid" id="stats"></div>
 
   <div class="cols">
     <div class="card">
       <h2>IV spread · Predict vs cross-feed
-        <span class="legend"><span><i style="background:#4da2ff"></i>Predict</span><span><i style="background:#fbbf24"></i>Cross-feed</span></span>
+        <span class="legend"><span><i style="background:#4da2ff"></i>Predict</span><span><i style="background:#22d3ee"></i>Cross-feed</span></span>
       </h2>
       <div class="body"><canvas id="chart"></canvas></div>
     </div>
@@ -111,7 +136,10 @@
     </div>
   </div>
 
-  <footer>Sui testnet · polls every 3s · <a href="https://predict.smartcoded.xyz" target="_blank" rel="noopener">predict.smartcoded.xyz</a> · <a href="/api/health" target="_blank">/api/health</a></footer>
+  <footer>
+    Predict Quant Suite · Sui testnet · keeper polls every 3s<br/>
+    <a href="https://predict.smartcodedbot.com" target="_blank" rel="noopener">Trading terminal</a><span class="sep">·</span><a href="https://t.me/TheSmartPredictBot" target="_blank" rel="noopener">Telegram bot</a><span class="sep">·</span><a href="/api/health" target="_blank">API health</a><span class="sep">·</span>Built for Sui Overflow 2026 by SmartCodedBot
+  </footer>
 </div>
 
 <script>
@@ -139,7 +167,7 @@ async function tick(){
   $('#stats').innerHTML=[
     statCard('Predict ATM IV',fmtPct(piv),'on-chain SVI'),
     statCard('Cross-feed IV',fmtPct(fiv),(L&&(L.sourceLabel||L.source))||'feed'),
-    statCard('IV spread',spread!=null?((spread>0?'+':'')+fmtPct(spread)):'--','predict − feed',spread>0?'green':spread<0?'red':''),
+    statCard('IV spread',spread!=null?fmtPct(spread):'--','predict minus feed',spread>0?'green':spread<0?'red':''),
     statCard('Edge threshold',h?fmtPct(h.min_edge_vol):'--','min to trade'),
     statCard('Last poll',h?(h.last_poll_age_s+'s'):'--','ago'),
     statCard('Spot',(L&&L.spot)?('$'+fmtNum(L.spot,0)):'--','BTC'),
@@ -170,7 +198,7 @@ function drawChart(qs){
   const c=$('#chart');const ctx=c.getContext('2d');const dpr=window.devicePixelRatio||1;
   const w=c.width=c.clientWidth*dpr,h=c.height=240*dpr;
   ctx.clearRect(0,0,w,h);
-  if(!qs||!qs.length){ctx.fillStyle='#5b6883';ctx.font=`${13*dpr}px monospace`;ctx.fillText('waiting for quotes…',16*dpr,30*dpr);return}
+  if(!qs||!qs.length){ctx.fillStyle='#5c6474';ctx.font=`${13*dpr}px monospace`;ctx.fillText('waiting for quotes…',16*dpr,30*dpr);return}
   const vals=qs.flatMap(q=>[q.predictIv,q.crossIv??q.polyIv].filter(Number.isFinite));
   const mx=Math.max(...vals),mn=Math.min(...vals),span=Math.max(.001,mx-mn),pad=12*dpr;
   const xs=qs.map((_,i)=>pad+i*((w-2*pad)/(qs.length-1||1)));
@@ -184,7 +212,7 @@ function drawChart(qs){
     if(fill){ctx.lineTo(xs[xs.length-1],h-pad);ctx.lineTo(xs[0],h-pad);ctx.closePath();const g=ctx.createLinearGradient(0,pad,0,h);g.addColorStop(0,color+'33');g.addColorStop(1,color+'00');ctx.fillStyle=g;ctx.fill();}
   };
   line('predictIv',null,'#4da2ff',true);
-  line('crossIv','polyIv','#fbbf24',false);
+  line('crossIv','polyIv','#22d3ee',false);
 }
 tick();setInterval(tick,3000);
 </script>
