@@ -38,7 +38,7 @@ import CalculatorSheet from './components/CalculatorSheet';
 import AboutModal from './components/AboutModal';
 import Toasts from './components/Toasts';
 import HeroSection from './components/HeroSection';
-import { TabsRow, TabKey, TABS } from './components/TabNav';
+import { TabsRow, BottomNav, TabKey, TABS } from './components/TabNav';
 import { fetchSurface, snapshotsFromSurface, fetchStats, SviSnapshot, SurfaceResponse, Stats } from './lib/predictApi';
 import { iv as sviIv } from './lib/sviMath';
 
@@ -186,11 +186,11 @@ export default function App() {
             {lastSync > 0 && (() => { const a = Math.floor((Date.now() - lastSync) / 1000); return <span className="ns-age">{a < 60 ? `${a}s` : `${Math.floor(a / 60)}m`}</span>; })()}
             <span className="ns-refresh">↻</span>
           </button>
-          <button className="btn btn-ghost cmd-btn" onClick={() => setPaletteOpen(true)} title="Command palette (⌘K)"><span className="cmd-k">⌘K</span></button>
-          <button className="btn btn-ghost" onClick={() => setTourOpen(true)} title="Take tour">Tour</button>
-          <button className="btn btn-ghost" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
-          <button className="btn btn-ghost" onClick={() => setAboutOpen(true)} title="About (?)">About</button>
-          <button className="btn btn-primary" onClick={() => setCalcOpen(true)} title="Calculator (C)">Open Calc →</button>
+          <button className="btn btn-ghost cmd-btn" onClick={() => setPaletteOpen(true)} title="Search / command palette (⌘K)"><span className="cmd-ico">⌕</span><span className="cmd-k">⌘K</span></button>
+          <button className="btn btn-ghost desk-only" onClick={() => setTourOpen(true)} title="Take tour">Tour</button>
+          <button className="btn btn-ghost desk-only" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
+          <button className="btn btn-ghost desk-only" onClick={() => setAboutOpen(true)} title="About (?)">About</button>
+          <button className="btn btn-primary desk-only" onClick={() => setCalcOpen(true)} title="Calculator (C)">Open Calc →</button>
         </div>
       </nav>
 
@@ -234,6 +234,12 @@ export default function App() {
           <span className="foot-hint">press <kbd>⌘K</kbd> for commands</span>
         </div>
       </footer>
+
+      {/* mobile-first app chrome */}
+      <button className="calc-fab" onClick={() => setCalcOpen(true)} title="Calculator" aria-label="Open calculator">
+        <span>ƒ</span>
+      </button>
+      <BottomNav active={tab} onChange={setTab} />
 
       {calcOpen && oracles.length > 0 && (
         <CalculatorSheet oracles={oracles} selectedIdx={idx} onSelect={setIdx} onClose={() => setCalcOpen(false)} />
