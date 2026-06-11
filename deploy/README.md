@@ -1,3 +1,5 @@
+> SECURITY: never hardcode credentials here. Set HOSTINGER_PASS in your shell env (not committed).
+
 # Deploy notes
 
 ## Frontend: predict-surface-studio → predict.smartcoded.xyz (Hostinger static)
@@ -12,7 +14,7 @@ npm run build                                      # outputs dist/
 /tmp/vps_scp.exp dist/assets/   /tmp/pqs-assets   # recursive: tar+ssh is easier
 /tmp/vps_ssh.exp "tar -cz -C /Users/smartcoded2011/sui-overflow/predict-surface-studio/dist . > /tmp/pqs.tgz"
 # Or build remotely and untar into the Hostinger docroot:
-/tmp/vps_ssh.exp "sshpass -p 'REDACTED-rotated' ssh -o StrictHostKeyChecking=no -p 65002 u935816303@82.180.168.216 'mkdir -p ~/domains/smartcoded.xyz/public_html/predict-app'"
+/tmp/vps_ssh.exp "sshpass -p 'REDACTED-set-HOSTINGER_PASS-env-var' ssh -o StrictHostKeyChecking=no -p 65002 u935816303@82.180.168.216 'mkdir -p ~/domains/smartcoded.xyz/public_html/predict-app'"
 # Upload the tarball through the VPS, then untar on Hostinger.
 ```
 
