@@ -55,6 +55,8 @@ const WELCOME = [
   '<b>3.</b> <code>/pnl</code>  track your positions and profit',
   '<b>4.</b> <code>/redeem</code>  claim settled payouts',
   '',
+  '⚽ <b>Bonus:</b> <code>/worldcup</code>  predict 2026 World Cup matches and climb the leaderboard.',
+  '',
   '<i>Self custody. The bot creates a Sui wallet that you own, and everything settles on-chain.</i>',
   '',
   'Tap a button below to begin.',
