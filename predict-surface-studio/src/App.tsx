@@ -205,6 +205,7 @@ export default function App() {
 
       <main className="main">
         <TabPanel
+          key={tab}
           tab={tab}
           oracles={oracles}
           current={current}

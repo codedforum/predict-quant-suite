@@ -78,6 +78,8 @@ html, body {
   background: var(--bg-deep); color: var(--t1);
   font-family: var(--inter);
   -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  scrollbar-width: thin;                                  /* Firefox */
+  scrollbar-color: rgba(77,162,255,0.22) transparent;
 }
 body { overflow-x: hidden; }
 #root, .page-in { width: 100%; min-height: 100vh; }
@@ -1332,6 +1334,18 @@ a.cb-item:hover { text-decoration: underline; }
 
 /* ============ Empty / utility ============ */
 .empty { padding: 50px 20px; text-align: center; color: var(--t3); font-size: 13px; }
+
+/* polish: oracle-list IV pill (was rendered unstyled) */
+.iv-pill {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 9px; border-radius: 999px;
+  color: var(--sui-blue-light); background: rgba(77,162,255,0.10);
+  border: 1px solid var(--border-2);
+}
+/* polish: smooth hover on the options/Greeks strike table */
+.strike-table tbody tr { transition: background-color 0.14s ease; }
+.strike-table tbody tr:hover td { background: var(--glass); }
 
 /* ============================================================
    SURFACE PAGE · immersive hero + metric bar
