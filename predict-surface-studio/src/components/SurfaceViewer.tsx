@@ -8,11 +8,12 @@ import { iv } from '../lib/sviMath';
 function heatColor(t: number): [number, number, number] {
   t = Math.max(0, Math.min(1, t));
   const stops: [number, number, number, number][] = [
-    [0.0,  0.118, 0.431, 0.953],
-    [0.25, 0.36,  0.66,  1.0],
-    [0.5,  0.024, 0.71,  0.83],
-    [0.75, 0.984, 0.749, 0.141],
-    [1.0,  0.937, 0.267, 0.267],
+    [0.0,  0.16, 0.20, 0.62],   // deep indigo
+    [0.22, 0.17, 0.45, 0.96],   // blue
+    [0.44, 0.30, 0.78, 1.0],    // sky
+    [0.62, 0.13, 0.83, 0.78],   // teal-cyan
+    [0.80, 0.98, 0.75, 0.14],   // amber
+    [1.0,  0.98, 0.44, 0.52],   // hot pink-red
   ];
   for (let i = 1; i < stops.length; i++) {
     if (t <= stops[i][0]) {
@@ -202,36 +203,38 @@ export default function SurfaceViewer({ snapshot }: Props) {
         gl={{ preserveDrawingBuffer: true }}
       >
         <CameraSetup cameraRef={cameraRef} />
-        <ambientLight intensity={0.55} />
-        <directionalLight position={[6, 12, 6]} intensity={1.05} />
-        <directionalLight position={[-8, 4, -6]} intensity={0.45} color="#5ca9ff" />
-        <pointLight position={[0, 8, 0]} intensity={0.4} color="#ffffff" />
+        <ambientLight intensity={0.4} />
+        <directionalLight position={[6, 14, 6]} intensity={1.15} />
+        <directionalLight position={[-9, 5, -7]} intensity={0.5} color="#4da2ff" />
+        <pointLight position={[0, 10, 2]} intensity={0.5} color="#7dc0ff" />
+        <pointLight position={[5, 2, 5]} intensity={0.3} color="#fb6f84" />
 
         <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.4, 0]} onPointerMove={onPointerMove}>
-          <meshStandardMaterial vertexColors side={THREE.DoubleSide} flatShading={!wireframe} metalness={0.08} roughness={0.55} wireframe={wireframe} />
+          <meshStandardMaterial vertexColors side={THREE.DoubleSide} flatShading={!wireframe} metalness={0.22} roughness={0.42} wireframe={wireframe} envMapIntensity={0.6} />
         </mesh>
 
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-          <planeGeometry args={[SURFACE_W * 1.6, SURFACE_H * 1.6]} />
-          <meshBasicMaterial color="#0a1428" transparent opacity={0.35} />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
+          <planeGeometry args={[SURFACE_W * 1.85, SURFACE_H * 1.85]} />
+          <meshBasicMaterial color="#070f1e" transparent opacity={0.5} />
         </mesh>
+        <gridHelper args={[Math.max(SURFACE_W, SURFACE_H) * 1.85, 22, '#1d3a66', '#0f2038']} position={[0, 0, 0]} />
 
         <Line
           points={[[0, 0.4, -SURFACE_H / 2], [0, ivMax * Z_SCALE + 1.5, -SURFACE_H / 2], [0, ivMax * Z_SCALE + 1.5, SURFACE_H / 2], [0, 0.4, SURFACE_H / 2]]}
-          color="#5ca9ff" lineWidth={1.5} dashed dashScale={6}
+          color="#4da2ff" lineWidth={1.5} dashed dashScale={6}
         />
-        <Text position={[0, ivMax * Z_SCALE + 2.2, 0]} fontSize={LABEL_S * 1.1} color="#5ca9ff" anchorX="center">ATM ${F.toFixed(0)}</Text>
+        <Text position={[0, ivMax * Z_SCALE + 2.2, 0]} fontSize={LABEL_S * 1.1} color="#4da2ff" anchorX="center">ATM ${F.toFixed(0)}</Text>
 
         {strikeLabels.map((t, i) => (
-          <Text key={i} position={[t.x, 0.42, SURFACE_H / 2 + 0.5]} fontSize={LABEL_S} color={t.isAtm ? '#5ca9ff' : '#a0a9b1'} anchorX="center" anchorY="top">{t.label}</Text>
+          <Text key={i} position={[t.x, 0.42, SURFACE_H / 2 + 0.5]} fontSize={LABEL_S} color={t.isAtm ? '#4da2ff' : '#98a6bf'} anchorX="center" anchorY="top">{t.label}</Text>
         ))}
 
         {dayLabels.map((t, i) => (
-          <Text key={i} position={[-SURFACE_W / 2 - 0.6, 0.42, t.z]} fontSize={LABEL_S * 0.95} color="#a0a9b1" anchorX="right" anchorY="middle">{t.label}</Text>
+          <Text key={i} position={[-SURFACE_W / 2 - 0.6, 0.42, t.z]} fontSize={LABEL_S * 0.95} color="#98a6bf" anchorX="right" anchorY="middle">{t.label}</Text>
         ))}
 
-        <Text position={[-SURFACE_W / 2 - 1.5, ivMin * Z_SCALE + 0.7, 0]} fontSize={LABEL_S} color="#5ca9ff" anchorX="right">{(ivMin * 100).toFixed(0)}%</Text>
-        <Text position={[-SURFACE_W / 2 - 1.5, ivMax * Z_SCALE + 0.7, 0]} fontSize={LABEL_S} color="#ef4444" anchorX="right">{(ivMax * 100).toFixed(0)}%</Text>
+        <Text position={[-SURFACE_W / 2 - 1.5, ivMin * Z_SCALE + 0.7, 0]} fontSize={LABEL_S} color="#4da2ff" anchorX="right">{(ivMin * 100).toFixed(0)}%</Text>
+        <Text position={[-SURFACE_W / 2 - 1.5, ivMax * Z_SCALE + 0.7, 0]} fontSize={LABEL_S} color="#fb6f84" anchorX="right">{(ivMax * 100).toFixed(0)}%</Text>
 
         <OrbitControls
           ref={controlsRef}
@@ -249,9 +252,9 @@ export default function SurfaceViewer({ snapshot }: Props) {
       </Canvas>
 
       <div className="iv-legend">
-        <span style={{ color: '#5ca9ff' }}>{(ivMin * 100).toFixed(0)}%</span>
+        <span style={{ color: '#4da2ff' }}>{(ivMin * 100).toFixed(0)}%</span>
         <div className="iv-scale-bar" />
-        <span style={{ color: '#ef4444' }}>{(ivMax * 100).toFixed(0)}%</span>
+        <span style={{ color: '#fb6f84' }}>{(ivMax * 100).toFixed(0)}%</span>
         <span className="iv-legend-label">IV scale</span>
       </div>
 
@@ -259,7 +262,7 @@ export default function SurfaceViewer({ snapshot }: Props) {
         <div className="surface-tooltip" style={{ left: hover.x + 14, top: hover.y - 14 }}>
           <div><span>strike</span> <strong>${hover.strike.toFixed(0)}</strong></div>
           <div><span>expiry</span> <strong>{hover.days < 1 ? `${(hover.days * 24).toFixed(1)}h` : `${hover.days.toFixed(1)}d`}</strong></div>
-          <div><span>IV</span> <strong style={{ color: '#5ca9ff' }}>{hover.ivPct.toFixed(1)}%</strong></div>
+          <div><span>IV</span> <strong style={{ color: '#4da2ff' }}>{hover.ivPct.toFixed(1)}%</strong></div>
         </div>
       )}
 

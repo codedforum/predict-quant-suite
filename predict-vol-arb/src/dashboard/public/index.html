@@ -2,62 +2,191 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Predict Vol-Arb | DeepBook</title>
+<title>Predict Vol-Arb · DeepBook on Sui</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#060d1a" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234da2ff'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='34' font-weight='800' fill='%23fff' font-family='sans-serif'%3E%CF%83%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
 <style>
-  body { margin:0; background:#07090d; color:#e6e9ef; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  header { padding:14px 18px; border-bottom:1px solid #1b2030; display:flex; justify-content:space-between; align-items:center; }
-  main { padding:18px; display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
-  .card { background:#0c1118; border:1px solid #1b2030; border-radius:8px; padding:14px; }
-  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; opacity:.7; margin:0 0 10px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th,td { text-align:left; padding:6px 8px; border-bottom:1px solid #1b2030; }
-  .pos { color:#5fd49a; } .neg { color:#ff7a85; }
-  canvas { width:100%; height:240px; }
+  :root{
+    --bg:#060d1a; --bg2:#03070f; --card:#0c1424; --elev:#0e1828; --elev2:#14223a;
+    --t1:#eef3fb; --t2:#98a6bf; --t3:#5b6883;
+    --border:rgba(150,175,225,.10); --border2:rgba(77,162,255,.32);
+    --blue:#4da2ff; --blue-d:#2b7fff; --blue-l:#7dc0ff; --glow:rgba(77,162,255,.28);
+    --green:#34d399; --red:#fb6f84; --cyan:#22d3ee; --yellow:#fbbf24;
+    --sg:'Space Grotesk',system-ui,sans-serif; --inter:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg2);color:var(--t1);font-family:var(--inter);-webkit-font-smoothing:antialiased;min-height:100vh}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(77,162,255,.16),transparent 60%),radial-gradient(ellipse 60% 40% at 85% 110%,rgba(77,162,255,.08),transparent 60%)}
+  .wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 18px 72px}
+  header{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:14px;
+    padding:16px 18px;margin:0 -18px 22px;background:linear-gradient(180deg,rgba(8,16,30,.94),rgba(8,16,30,.74));
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-family:var(--sg);font-weight:800;font-size:19px;color:#fff;
+    background:linear-gradient(135deg,var(--blue-d),var(--blue),var(--blue-l));box-shadow:0 6px 22px var(--glow),inset 0 1px 0 rgba(255,255,255,.25)}
+  .brand b{font-family:var(--sg);font-size:16px;letter-spacing:-.02em;display:block}
+  .brand span{font-family:var(--mono);font-size:11px;color:var(--t2)}
+  .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;font-family:var(--mono);font-size:12px;font-weight:500;
+    background:var(--elev);border:1px solid var(--border)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--t3)}
+  .dot.live{background:var(--green);animation:pulse 2s infinite}
+  .dot.dry{background:var(--yellow)} .dot.off{background:var(--red)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+  .cta{font-family:var(--sg);font-weight:700;font-size:13px;color:#fff;text-decoration:none;padding:8px 15px;border-radius:10px;
+    background:linear-gradient(135deg,var(--blue-d),var(--blue));box-shadow:0 6px 20px var(--glow),inset 0 1px 0 rgba(255,255,255,.18)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:14px}
+  .stat{background:linear-gradient(180deg,var(--elev),var(--card));border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  .stat .l{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
+  .stat .v{font-family:var(--sg);font-weight:800;font-size:26px;margin-top:7px;font-variant-numeric:tabular-nums;
+    background:linear-gradient(135deg,#fff,var(--blue-l));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .v.green{background:linear-gradient(135deg,#fff,var(--green));-webkit-background-clip:text;color:transparent}
+  .stat .v.red{background:linear-gradient(135deg,#fff,var(--red));-webkit-background-clip:text;color:transparent}
+  .stat .s{font-family:var(--mono);font-size:11px;color:var(--t2);margin-top:5px}
+  .cols{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:860px){.cols{grid-template-columns:1.4fr 1fr}}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 42%),var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 8px 28px rgba(0,0,0,.45);overflow:hidden}
+  .card h2{font-family:var(--sg);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t2);
+    margin:0;padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .card .body{padding:16px 18px}
+  canvas{width:100%;height:240px;display:block}
+  table{width:100%;border-collapse:collapse;font-size:13px;font-family:var(--mono)}
+  th{text-align:left;padding:7px 8px;color:var(--t3);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+  td{text-align:left;padding:8px;border-bottom:1px solid var(--border);color:var(--t1)}
+  tbody tr:last-child td{border-bottom:0}
+  .pos{color:var(--green)} .neg{color:var(--red)} .muted{color:var(--t3)}
+  .legend{display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--t2);font-weight:400;letter-spacing:0;text-transform:none}
+  .legend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  .empty{color:var(--t3);font-family:var(--mono);font-size:12px;padding:18px 8px;text-align:center}
+  footer{margin-top:24px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--t3)}
+  footer a{color:var(--blue);text-decoration:none}
 </style>
 </head>
 <body>
-<header>
-  <strong>Predict Vol-Arb</strong>
-  <span id="pnl" style="font-size:13px; opacity:.8">--</span>
-</header>
-<main>
-  <div class="card"><h2>IV: Predict vs Polymarket</h2><canvas id="chart"></canvas></div>
-  <div class="card"><h2>Recent Trades</h2><table id="trades"><thead><tr><th>time</th><th>side</th><th>edge</th><th>size</th></tr></thead><tbody></tbody></table></div>
-</main>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="mark">σ</div>
+      <div><b>Predict Vol-Arb</b><span>DeepBook on Sui · keeper</span></div>
+    </div>
+    <div class="right">
+      <span class="pill"><span id="modeDot" class="dot"></span><span id="modeText">connecting</span></span>
+      <span class="pill">pnl <span id="pnl" class="muted">--</span></span>
+      <a class="cta" href="https://predict.smartcoded.xyz" target="_blank" rel="noopener">Open Surface Studio →</a>
+    </div>
+  </header>
+
+  <div class="grid" id="stats"></div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>IV spread · Predict vs cross-feed
+        <span class="legend"><span><i style="background:#4da2ff"></i>Predict</span><span><i style="background:#fbbf24"></i>Cross-feed</span></span>
+      </h2>
+      <div class="body"><canvas id="chart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Recent trades</h2>
+      <div class="body" style="padding:6px 10px"><table id="trades"><thead><tr><th>time</th><th>side</th><th>edge</th><th>size</th></tr></thead><tbody></tbody></table>
+        <div class="empty" id="tradesEmpty" style="display:none">No trades yet · keeper in DRY-RUN</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols" style="margin-top:14px">
+    <div class="card">
+      <h2>Live opportunities</h2>
+      <div class="body" style="padding:6px 10px"><table id="opps"><thead><tr><th>oracle</th><th>predict iv</th><th>feed iv</th><th>edge</th></tr></thead><tbody></tbody></table>
+        <div class="empty" id="oppsEmpty" style="display:none">No edge over threshold right now</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>On-chain vault</h2>
+      <div class="body"><table id="vault"><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <footer>Sui testnet · polls every 3s · <a href="https://predict.smartcoded.xyz" target="_blank" rel="noopener">predict.smartcoded.xyz</a> · <a href="/api/health" target="_blank">/api/health</a></footer>
+</div>
+
 <script>
-async function tick() {
-  const r = await fetch('/api/state').then(x => x.json());
-  document.getElementById('pnl').textContent = `pnl: ${r.pnl.toFixed(2)} dUSDC`;
-  drawChart(r.quotes);
-  const tb = document.querySelector('#trades tbody');
-  tb.innerHTML = r.trades.map(t => `<tr>
-    <td>${new Date(t.ts).toISOString().slice(11,19)}</td>
-    <td>${t.side}</td>
-    <td>${(t.edge*100).toFixed(2)}%</td>
-    <td>${t.size?.toFixed(2) ?? '-'}</td>
-  </tr>`).join('');
+const $=s=>document.querySelector(s);
+const fmtPct=v=>Number.isFinite(v)?(v*100).toFixed(2)+'%':'--';
+const fmtNum=(v,d=2)=>Number.isFinite(v)?v.toLocaleString(undefined,{maximumFractionDigits:d}):'--';
+async function j(u){try{const r=await fetch(u);return r.ok?await r.json():null}catch{return null}}
+
+function setMode(h){
+  const dot=$('#modeDot'),txt=$('#modeText');
+  if(!h){dot.className='dot off';txt.textContent='offline';return}
+  if(h.kill_switch_active){dot.className='dot off';txt.textContent='kill switch';}
+  else if(h.dry_run){dot.className='dot dry';txt.textContent='DRY-RUN · live polling';}
+  else{dot.className='dot live';txt.textContent='LIVE';}
 }
-function drawChart(qs) {
-  const c = document.getElementById('chart');
-  const ctx = c.getContext('2d');
-  const w = c.width = c.clientWidth, h = c.height = 240;
+function statCard(l,v,s,cls){return `<div class="stat"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s||''}</div></div>`}
+
+async function tick(){
+  const [st,h,cf,vault,opps]=await Promise.all([j('/api/state'),j('/api/health'),j('/api/cross-feed'),j('/api/vault'),j('/api/opportunities')]);
+  setMode(h);
+  if(st&&Number.isFinite(st.pnl)){const p=st.pnl;$('#pnl').textContent=p.toFixed(2)+' dUSDC';$('#pnl').className=p>0?'pos':p<0?'neg':'muted';}
+
+  const L=(cf&&cf.latest)||null;
+  const piv=h?.last_predict_iv, fiv=(L&&Number.isFinite(L.atmIv))?L.atmIv:h?.last_poly_iv, spread=(Number.isFinite(piv)&&Number.isFinite(fiv))?piv-fiv:null;
+  $('#stats').innerHTML=[
+    statCard('Predict ATM IV',fmtPct(piv),'on-chain SVI'),
+    statCard('Cross-feed IV',fmtPct(fiv),(L&&(L.sourceLabel||L.source))||'feed'),
+    statCard('IV spread',spread!=null?((spread>0?'+':'')+fmtPct(spread)):'--','predict − feed',spread>0?'green':spread<0?'red':''),
+    statCard('Edge threshold',h?fmtPct(h.min_edge_vol):'--','min to trade'),
+    statCard('Last poll',h?(h.last_poll_age_s+'s'):'--','ago'),
+    statCard('Spot',(L&&L.spot)?('$'+fmtNum(L.spot,0)):'--','BTC'),
+  ].join('');
+
+  if(st&&st.quotes)drawChart(st.quotes);
+
+  const tb=$('#trades tbody'),tr=(st&&st.trades)||[];
+  $('#tradesEmpty').style.display=tr.length?'none':'block';
+  tb.innerHTML=tr.slice(-12).reverse().map(t=>`<tr><td class="muted">${new Date(t.ts).toISOString().slice(11,19)}</td><td>${t.side||'-'}</td><td class="${t.edge>0?'pos':'neg'}">${fmtPct(t.edge)}</td><td>${t.size?fmtNum(t.size):'-'}</td></tr>`).join('');
+
+  const ob=$('#opps tbody'),raw=(opps&&(opps.opportunities||opps))||[],oarr=Array.isArray(raw)?raw:[];
+  $('#oppsEmpty').style.display=oarr.length?'none':'block';
+  ob.innerHTML=oarr.slice(0,8).map(o=>`<tr><td class="muted">${String(o.oracleId||o.oracle||'').slice(0,10)}…</td><td>${fmtPct(o.predictIv)}</td><td>${fmtPct(o.feedIv??o.polyIv)}</td><td class="${(o.edge||0)>0?'pos':'neg'}">${fmtPct(o.edge)}</td></tr>`).join('');
+
+  const vt=$('#vault tbody');
+  if(vault){vt.innerHTML=[
+    ['Vault balance',vault.vault_balance_dusdc!=null?('$'+fmtNum(vault.vault_balance_dusdc,0)+' dUSDC'):'--'],
+    ['PLP supply',vault.plp_supply!=null?fmtNum(vault.plp_supply,0):'--'],
+    ['Base spread',vault.base_spread_bps!=null?(vault.base_spread_bps+' bps'):'--'],
+    ['Max exposure',vault.max_total_exposure_pct!=null?(vault.max_total_exposure_pct+'%'):'--'],
+    ['Trading',vault.trading_paused?'<span class="neg">paused</span>':'<span class="pos">live</span>'],
+  ].map(r=>`<tr><td class="muted">${r[0]}</td><td style="text-align:right">${r[1]}</td></tr>`).join('');}
+  else vt.innerHTML='<tr><td class="empty" colspan="2">vault unavailable</td></tr>';
+}
+
+function drawChart(qs){
+  const c=$('#chart');const ctx=c.getContext('2d');const dpr=window.devicePixelRatio||1;
+  const w=c.width=c.clientWidth*dpr,h=c.height=240*dpr;
   ctx.clearRect(0,0,w,h);
-  if (!qs.length) return;
-  const ivMax = Math.max(...qs.flatMap(q => [q.predictIv, q.polyIv].filter(Boolean)));
-  const ivMin = Math.min(...qs.flatMap(q => [q.predictIv, q.polyIv].filter(Boolean)));
-  const span = Math.max(0.001, ivMax - ivMin);
-  const xs = qs.map((_,i) => i*(w/(qs.length-1||1)));
-  const yp = (v) => h - ((v - ivMin)/span)*(h-20) - 10;
-  function line(field, color) {
-    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
-    qs.forEach((q,i) => { const v = q[field]; if (!Number.isFinite(v)) return; (i?ctx.lineTo:ctx.moveTo).call(ctx, xs[i], yp(v)); });
+  if(!qs||!qs.length){ctx.fillStyle='#5b6883';ctx.font=`${13*dpr}px monospace`;ctx.fillText('waiting for quotes…',16*dpr,30*dpr);return}
+  const vals=qs.flatMap(q=>[q.predictIv,q.crossIv??q.polyIv].filter(Number.isFinite));
+  const mx=Math.max(...vals),mn=Math.min(...vals),span=Math.max(.001,mx-mn),pad=12*dpr;
+  const xs=qs.map((_,i)=>pad+i*((w-2*pad)/(qs.length-1||1)));
+  const yp=v=>h-pad-((v-mn)/span)*(h-2*pad);
+  ctx.strokeStyle='rgba(150,175,225,.08)';ctx.lineWidth=1*dpr;
+  for(let g=0;g<=3;g++){const y=pad+g*((h-2*pad)/3);ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-pad,y);ctx.stroke();}
+  const line=(field,alt,color,fill)=>{
+    ctx.strokeStyle=color;ctx.lineWidth=2*dpr;ctx.beginPath();let started=false;
+    qs.forEach((q,i)=>{const v=Number.isFinite(q[field])?q[field]:q[alt];if(!Number.isFinite(v))return;(started?ctx.lineTo:ctx.moveTo).call(ctx,xs[i],yp(v));started=true;});
     ctx.stroke();
-  }
-  line('predictIv', '#5b9dff');
-  line('polyIv', '#ffb454');
+    if(fill){ctx.lineTo(xs[xs.length-1],h-pad);ctx.lineTo(xs[0],h-pad);ctx.closePath();const g=ctx.createLinearGradient(0,pad,0,h);g.addColorStop(0,color+'33');g.addColorStop(1,color+'00');ctx.fillStyle=g;ctx.fill();}
+  };
+  line('predictIv',null,'#4da2ff',true);
+  line('crossIv','polyIv','#fbbf24',false);
 }
-tick(); setInterval(tick, 3000);
+tick();setInterval(tick,3000);
 </script>
 </body>
 </html>

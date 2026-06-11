@@ -39,6 +39,40 @@ import Toasts from './components/Toasts';
 import HeroSection from './components/HeroSection';
 import { TabsRow, TabKey, TABS } from './components/TabNav';
 import { fetchSurface, snapshotsFromSurface, fetchStats, SviSnapshot, SurfaceResponse, Stats } from './lib/predictApi';
+import { iv as sviIv } from './lib/sviMath';
+
+// Live metric bar above the 3D surface — ATM IV, forward, expiry countdown, freshness.
+function SurfaceStatBar({ snap }: { snap?: SviSnapshot }) {
+  if (!snap) return <div className="surf-statbar"><div className="skeleton" style={{ height: 28, width: '100%' }} /></div>;
+  const now = Date.now();
+  const tYears = Math.max(1 / (365 * 24), (snap.expirySec * 1000 - now) / (365 * 24 * 3600 * 1000));
+  const atm = sviIv(snap.svi, 0, tYears) * 100;
+  const wingLo = sviIv(snap.svi, Math.log(0.88), tYears) * 100;
+  const wingHi = sviIv(snap.svi, Math.log(1.12), tYears) * 100;
+  const skew = wingLo - wingHi; // put-wing minus call-wing
+  const secsLeft = Math.max(0, snap.expirySec - Math.floor(now / 1000));
+  const d = Math.floor(secsLeft / 86400), h = Math.floor((secsLeft % 86400) / 3600), m = Math.floor((secsLeft % 3600) / 60);
+  const expStr = secsLeft <= 0 ? 'settled' : d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`;
+  const ageS = Math.max(0, Math.floor((now - (snap.timestampMs || now)) / 1000));
+  const items = [
+    { l: 'ATM IV', v: `${atm.toFixed(1)}%`, accent: true },
+    { l: 'Forward', v: `$${(snap.forward / 1000).toFixed(1)}k` },
+    { l: '25Δ skew', v: `${skew >= 0 ? '+' : ''}${skew.toFixed(1)}`, tone: skew >= 0 ? 'pos' : 'neg' },
+    { l: 'Expiry', v: expStr },
+    { l: 'Updated', v: ageS < 90 ? `${ageS}s ago` : `${Math.floor(ageS / 60)}m ago` },
+  ];
+  return (
+    <div className="surf-statbar">
+      {items.map((it, i) => (
+        <div className="surf-stat" key={i}>
+          <span className="ss-l">{it.l}</span>
+          <span className={'ss-v' + (it.accent ? ' accent' : '') + (it.tone ? ' ' + it.tone : '')}>{it.v}</span>
+        </div>
+      ))}
+      <div className="surf-stat src"><span className="ss-l">Source</span><span className="ss-v live"><i className="ss-dot" />on-chain SVI</span></div>
+    </div>
+  );
+}
 
 export default function App() {
   const [oracles, setOracles] = useState<SviSnapshot[]>([]);
@@ -164,55 +198,60 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
 
   if (tab === 'surface') {
     return (
-      <div className="tab-panel">
-        <div className="two-col">
-        <section className="card glow tall" style={{ minHeight: 540 }}>
+      <div className="tab-panel surface-page">
+        <section className="card glow tall surface-hero" style={{ minHeight: 620 }}>
           <div className="card-head">
-            <h2>Volatility Surface</h2>
+            <div className="ch-title">
+              <h2>Volatility Surface</h2>
+              <span className="hero-tag">Gatheral SVI · live on-chain</span>
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div className="mode-toggle">
                 <button className={surfaceMode === '3d' ? 'active' : ''} onClick={() => setSurfaceMode('3d')}>3D</button>
                 <button className={surfaceMode === '2d' ? 'active' : ''} onClick={() => setSurfaceMode('2d')}>2D heatmap</button>
               </div>
-              <span className="meta oracle-id-link" onClick={() => current && onDrillOracle(current.oracleId)}>
-                {current ? current.oracleId.slice(0, 12) + '...' + current.oracleId.slice(-4) : 'loading'}
+              <span className="meta oracle-id-link" onClick={() => current && onDrillOracle(current.oracleId)} title="Open oracle drilldown">
+                {current ? current.oracleId.slice(0, 10) + '…' + current.oracleId.slice(-4) : 'loading'}
               </span>
             </div>
           </div>
-          <div className="card-body card-body-flex" style={{ padding: 0, minHeight: 480 }}>
+          <SurfaceStatBar snap={current} />
+          <div className="card-body card-body-flex surface-stage" style={{ padding: 0, minHeight: 480 }}>
             {current ? (surfaceMode === '3d' ? <SurfaceViewer snapshot={current} /> : <Heatmap2D snapshot={current} />) : skel}
           </div>
         </section>
-        <aside className="side">
-          <div className="card">
-            <div className="card-head"><h2>Oracles</h2><span className="meta">{oracles.length} live</span></div>
-            <div className="card-body" style={{ padding: 0 }}>
-              {oracles.length ? <OracleList oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>{Array.from({ length: 5 }).map((_, i) => <span key={i} className="skeleton" style={{ height: 44 }} />)}</div>}
+
+        <div className="two-col">
+          <section className="card glow">
+            <div className="card-head">
+              <h2>Implied probability distribution</h2>
+              <span className="meta">where BTC lands at expiry · ${((current?.forward || 79000) * 0.015 / 1000).toFixed(1)}k bins</span>
             </div>
-          </div>
-          <div className="card">
-            <div className="card-head"><h2>SVI Params</h2><span className="meta">Gatheral</span></div>
             <div className="card-body">
-              {current ? <SviParamsCard svi={current.svi} /> : <span className="skeleton" style={{ height: 110 }} />}
+              {current ? <ProbabilityHistogram snapshot={current} /> : skel}
             </div>
-          </div>
-          <div className="card">
-            <div className="card-head"><h2>Arb Status</h2></div>
-            <div className="card-body">
-              {current ? <ArbStatus snapshot={current} allOracles={oracles} /> : <span className="skeleton" style={{ height: 60 }} />}
+          </section>
+          <aside className="side">
+            <div className="card">
+              <div className="card-head"><h2>Oracles</h2><span className="meta">{oracles.length} live</span></div>
+              <div className="card-body" style={{ padding: 0 }}>
+                {oracles.length ? <OracleList oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>{Array.from({ length: 5 }).map((_, i) => <span key={i} className="skeleton" style={{ height: 44 }} />)}</div>}
+              </div>
             </div>
-          </div>
-        </aside>
+            <div className="card">
+              <div className="card-head"><h2>SVI Params</h2><span className="meta">Gatheral</span></div>
+              <div className="card-body">
+                {current ? <SviParamsCard svi={current.svi} /> : <span className="skeleton" style={{ height: 110 }} />}
+              </div>
+            </div>
+            <div className="card">
+              <div className="card-head"><h2>Arb Status</h2></div>
+              <div className="card-body">
+                {current ? <ArbStatus snapshot={current} allOracles={oracles} /> : <span className="skeleton" style={{ height: 60 }} />}
+              </div>
+            </div>
+          </aside>
         </div>
-        <section className="card glow">
-          <div className="card-head">
-            <h2>Implied probability distribution</h2>
-            <span className="meta">where BTC will land at expiry, by ${((current?.forward || 79000) * 0.015 / 1000).toFixed(1)}k bins</span>
-          </div>
-          <div className="card-body">
-            {current ? <ProbabilityHistogram snapshot={current} /> : skel}
-          </div>
-        </section>
       </div>
     );
   }

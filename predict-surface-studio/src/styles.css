@@ -4,35 +4,46 @@
    ============================================================ */
 
 :root {
-  --bg:        #0a0e1a;
-  --bg-deep:   #060912;
-  --t1:        #ffffff;
-  --t2:        #a0a9b1;
-  --t3:        #5a6373;
-  --card:      rgba(14, 20, 36, 0.72);
-  --card-2:    rgba(22, 30, 50, 0.55);
-  --glass:     rgba(41, 141, 255, 0.04);
-  --glass-2:   rgba(41, 141, 255, 0.07);
-  --border:    rgba(255, 255, 255, 0.07);
-  --border-2:  rgba(41, 141, 255, 0.18);
+  /* base surfaces - deep Sui navy duotone */
+  --bg:        #060d1a;
+  --bg-deep:   #03070f;
+  --t1:        #eef3fb;
+  --t2:        #98a6bf;
+  --t3:        #5b6883;
 
-  /* DeepBook on Sui official palette */
-  --sui-blue:        #298dff;
-  --sui-blue-light:  #5ca9ff;
-  --sui-blue-deep:   #1e6ef3;
-  --sui-blue-glow:   rgba(41, 141, 255, 0.25);
+  /* elevation - solid premium panels (v16 redesign) */
+  --card:      #0c1424;
+  --card-2:    #111d34;
+  --elev-1:    #0e1828;
+  --elev-2:    #14223a;
+  --glass:     rgba(77, 162, 255, 0.05);
+  --glass-2:   rgba(77, 162, 255, 0.10);
+  --border:    rgba(150, 175, 225, 0.10);
+  --border-2:  rgba(77, 162, 255, 0.32);
 
-  --green:       #22c55e;
-  --cyan:        #06b6d4;
-  --blue:        #298dff;
-  --purple:      #a855f7;
-  --red:         #ef4444;
+  /* Sui official brand blue */
+  --sui-blue:        #4da2ff;
+  --sui-blue-light:  #7dc0ff;
+  --sui-blue-deep:   #2b7fff;
+  --sui-blue-glow:   rgba(77, 162, 255, 0.28);
+
+  --green:       #34d399;
+  --cyan:        #22d3ee;
+  --blue:        #4da2ff;
+  --purple:      #a78bfa;
+  --red:         #fb6f84;
   --yellow:      #fbbf24;
-  --orange:      #298dff;     /* repointed - kept for component compat */
-  --orange-soft: #1e6ef3;
+  --orange:      #4da2ff;     /* repointed - kept for component compat */
+  --orange-soft: #2b7fff;
 
   --accent:      var(--sui-blue);
-  --accent-2:    var(--sui-blue-light);
+  --accent-2:    var(--cyan);
+
+  /* radii + shadows */
+  --r-sm: 10px; --r-md: 14px; --r-lg: 18px;
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 8px 28px rgba(0,0,0,0.45);
+  --shadow-glow: 0 0 0 1px var(--border-2), 0 12px 40px var(--sui-blue-glow);
 
   --sg:    'Space Grotesk', system-ui, sans-serif;
   --inter: 'Inter', system-ui, sans-serif;
@@ -1202,3 +1213,139 @@ h1, h2, h3, h4 { font-family: var(--sg); margin: 0; font-weight: 700; letter-spa
 
 /* ============ Empty / utility ============ */
 .empty { padding: 50px 20px; text-align: center; color: var(--t3); font-size: 13px; }
+
+/* ============================================================
+   REDESIGN v16 (2026-06-11) - premium Sui-navy refresh.
+   Appended override layer (later cascade wins). Class names
+   unchanged so all 44 components inherit without edits.
+   ============================================================ */
+html, body { background: var(--bg-deep); }
+
+/* solid premium panels instead of heavy glass blur */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.022), transparent 42%), var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.card-head {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--glass), transparent);
+}
+.card.glow:hover, .card:hover {
+  border-color: var(--border-2);
+  box-shadow: var(--shadow-2), 0 0 0 1px rgba(77,162,255,0.12);
+}
+
+/* top nav */
+.nav {
+  padding: 14px 24px;
+  background: linear-gradient(180deg, rgba(8,16,30,0.94), rgba(8,16,30,0.74));
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03);
+}
+.brand .mark { border-radius: 12px; box-shadow: 0 6px 22px var(--sui-blue-glow), inset 0 1px 0 rgba(255,255,255,0.25); }
+.brand-name { letter-spacing: -0.02em; }
+
+/* buttons */
+.btn { border-radius: var(--r-sm); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--sui-blue-deep), var(--sui-blue));
+  box-shadow: 0 6px 20px var(--sui-blue-glow), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+.btn-ghost { background: var(--elev-1); border-color: var(--border); color: var(--t1); }
+.btn-ghost:hover { background: var(--elev-2); border-color: var(--border-2); }
+
+/* pill tabs replace the underline */
+.tabs-wrap { background: linear-gradient(180deg, rgba(8,16,30,0.88), rgba(8,16,30,0.58)); border-bottom: 1px solid var(--border); }
+.tabs { gap: 4px; padding: 8px 16px; }
+.tab { height: 40px; border-radius: 10px; padding: 0 15px; color: var(--t2); transition: all 0.18s; }
+.tab:hover { color: var(--t1); background: var(--glass); }
+.tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(43,127,255,0.24), rgba(77,162,255,0.12));
+  box-shadow: inset 0 0 0 1px var(--border-2);
+}
+.tab.active::after { display: none; }
+.tab.active .glyph { color: var(--sui-blue-light); opacity: 1; }
+
+/* hero + type */
+.hero { padding: 48px 24px 24px; }
+.hero h1 { letter-spacing: -0.03em; }
+
+/* stat / live tiles - crisper, solid */
+.live-card, .stat-card {
+  background: linear-gradient(180deg, var(--elev-1), var(--card));
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+}
+.live-card:hover { border-color: var(--border-2); box-shadow: var(--shadow-2); }
+
+/* accents */
+::-webkit-scrollbar-thumb { background: rgba(77,162,255,0.18); }
+::-webkit-scrollbar-thumb:hover { background: rgba(77,162,255,0.34); }
+::selection { background: rgba(77,162,255,0.30); color: #fff; }
+
+/* ============================================================
+   SURFACE PAGE redesign (2026-06-11) — immersive hero + metric bar
+   ============================================================ */
+.surface-hero { overflow: hidden; }
+.surface-hero .card-head { background: linear-gradient(180deg, rgba(77,162,255,.10), transparent); }
+.ch-title { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.hero-tag {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  color: var(--sui-blue-light); background: var(--glass-2);
+  border: 1px solid var(--border-2); padding: 3px 9px; border-radius: 999px;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.surface-stage { position: relative; background:
+  radial-gradient(ellipse 70% 60% at 50% 30%, rgba(77,162,255,.06), transparent 70%); }
+
+/* live metric bar between head and canvas */
+.surf-statbar {
+  display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;
+  padding: 0 4px; border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--elev-1), transparent);
+}
+.surf-stat {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 12px 20px; position: relative; min-width: 96px;
+}
+.surf-stat + .surf-stat::before {
+  content: ""; position: absolute; left: 0; top: 22%; bottom: 22%; width: 1px; background: var(--border);
+}
+.surf-stat .ss-l { font-family: var(--mono); font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: var(--t3); }
+.surf-stat .ss-v { font-family: var(--sg); font-weight: 800; font-size: 19px; color: var(--t1); font-variant-numeric: tabular-nums; line-height: 1; }
+.surf-stat .ss-v.accent { background: linear-gradient(135deg, #fff, var(--sui-blue-light)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.surf-stat .ss-v.pos { color: var(--green); } .surf-stat .ss-v.neg { color: var(--red); }
+.surf-stat.src { margin-left: auto; }
+.surf-stat .ss-v.live { font-size: 13px; font-weight: 600; font-family: var(--mono); color: var(--green); display: inline-flex; align-items: center; gap: 7px; }
+.ss-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 var(--green); animation: ssPulse 2s infinite; }
+@keyframes ssPulse { 0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)} 70%{box-shadow:0 0 0 6px rgba(52,211,153,0)} 100%{box-shadow:0 0 0 0 rgba(52,211,153,0)} }
+@media (max-width: 640px) {
+  .surf-stat { padding: 10px 14px; min-width: 78px; }
+  .surf-stat .ss-v { font-size: 16px; }
+  .surf-stat.src { margin-left: 0; width: 100%; border-top: 1px solid var(--border); }
+  .surf-stat.src::before { display: none; }
+}
+
+/* refined segmented mode toggle (fixes legacy brown active text) */
+.mode-toggle { border: 1px solid var(--border); border-radius: 9px; background: var(--elev-1); padding: 2px; gap: 2px; }
+.mode-toggle button { border-radius: 7px; padding: 5px 11px; transition: all .15s; }
+.mode-toggle button.active { background: linear-gradient(135deg, var(--sui-blue-deep), var(--sui-blue)); color: #fff; box-shadow: 0 2px 8px var(--sui-blue-glow); }
+.mode-toggle button:not(.active):hover { color: var(--t1); }
+
+/* glassy floating controls on the new palette */
+.surface-controls { background: rgba(8,16,30,.72); border-color: var(--border-2); }
+.sc-btn.on { background: linear-gradient(135deg, var(--sui-blue-deep), var(--sui-blue)); border-color: var(--sui-blue); }
+.iv-scale-bar { background: linear-gradient(90deg, #29339e, #2b7fff, #4dc7ff, #22d3c7, #fbbf24, #fb6f84); }
+
+/* oracle id chip in head */
+.surface-hero .oracle-id-link {
+  font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: 8px;
+  background: var(--elev-1); border: 1px solid var(--border);
+}
+.surface-hero .oracle-id-link:hover { border-color: var(--border-2); color: var(--sui-blue-light); }
