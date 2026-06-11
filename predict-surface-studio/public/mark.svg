@@ -1,0 +1,18 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Predict Quant Suite">
+  <defs>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b7fff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#beam)"/>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#ffffff" stroke-opacity="0.18"/>
+  <!-- back curve (surface depth) -->
+  <path d="M16 34 Q 32 50 48 34" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.38"/>
+  <!-- volatility smile -->
+  <path d="M14 24 Q 32 47 50 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- nodes -->
+  <circle cx="14" cy="24" r="3.6" fill="#ffffff"/>
+  <circle cx="32" cy="40" r="3.6" fill="#ffffff"/>
+  <circle cx="50" cy="24" r="3.6" fill="#ffffff"/>
+</svg>

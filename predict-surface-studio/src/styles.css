@@ -1507,3 +1507,26 @@ a.cb-item:hover { text-decoration: underline; }
   .bg-grid, .bg-aurora, .bg-orb, .bg-mark, .bg-rays, .bg-shimmer,
   .brand .mark, .h-grad, .ticker-track { animation: none !important; }
 }
+
+/* ============================================================
+   Detailed landing hero (2026-06-11) — brand, pillars, on-chain proof
+   ============================================================ */
+.hero-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+.hero-mark{width:44px;height:44px;border-radius:12px;box-shadow:var(--shadow-glow,0 8px 24px var(--sui-blue-glow));}
+.hero-name{font-family:var(--sg);font-weight:800;font-size:18px;letter-spacing:-.02em;color:var(--t1);line-height:1.1;}
+.hero-cobrand{font-family:var(--mono);font-size:11px;color:var(--t2);margin-top:2px;}
+.hero-cobrand b{font-weight:700;}
+.bc-sc{color:var(--smartcoded,#f97316);} .bc-db{color:var(--deepbook,#22d3ee);} .bc-sui{color:var(--sui-blue,#4da2ff);}
+
+.pillars{display:grid;grid-template-columns:1fr;gap:12px;margin:24px 0 18px;}
+@media(min-width:760px){.pillars{grid-template-columns:repeat(3,1fr);}}
+.pillar{background:linear-gradient(180deg,var(--elev-1,var(--card)),var(--card));border:1px solid var(--border);border-radius:var(--r-md,14px);padding:16px 18px;}
+.pillar-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;background:var(--beam,linear-gradient(135deg,#2b7fff,#22d3ee));margin-bottom:10px;}
+.pillar-h{font-family:var(--sg);font-weight:700;font-size:15px;color:var(--t1);margin-bottom:5px;}
+.pillar-d{font-size:12.5px;color:var(--t2);line-height:1.55;}
+
+.proof-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:24px;font-family:var(--mono);font-size:12px;}
+.proof-label{color:var(--t3);text-transform:uppercase;letter-spacing:.07em;font-size:10.5px;}
+.proof-link{color:var(--sui-blue);text-decoration:none;border:1px solid var(--border-2,var(--border));border-radius:999px;padding:4px 12px;transition:all .15s;}
+.proof-link:hover{border-color:var(--sui-blue);background:var(--glass);color:var(--sui-blue-light,var(--sui-blue));}
+.proof-link.ghost{color:var(--t2);}
