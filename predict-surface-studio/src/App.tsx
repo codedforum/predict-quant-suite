@@ -197,11 +197,11 @@ export default function App() {
       <LiveTicker />
       <SettlementCountdown oracles={oracles} />
 
-      <HeroSection surface={surface} oracles={oracles} current={current} stats={stats} />
-
       <div className="tabs-wrap">
         <TabsRow active={tab} onChange={setTab} />
       </div>
+
+      {tab === 'surface' && <HeroSection surface={surface} oracles={oracles} current={current} stats={stats} />}
 
       <main className="main">
         <TabPanel
