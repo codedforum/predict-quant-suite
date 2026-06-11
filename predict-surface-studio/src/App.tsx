@@ -176,6 +176,7 @@ export default function App() {
           <div className="mark">σ</div>
           <div>
             <div className="brand-name">Predict Quant Suite</div>
+            <div className="brand-sub">by <b className="bc-sc">SmartCodedBot</b> · <b className="bc-db">DeepBook</b> × <b className="bc-sui">Sui</b></div>
           </div>
         </a>
         <div className="nav-actions">
@@ -217,9 +218,19 @@ export default function App() {
       </main>
 
       <footer className="foot">
+        <div className="cobrand">
+          <span className="cb-item cb-sc">SmartCodedBot</span>
+          <span className="cb-x">build</span>
+          <span className="cb-dot">·</span>
+          <span className="cb-mut">built on</span>
+          <a className="cb-item cb-db" href="https://docs.sui.io/onchain-finance/deepbook-predict/" target="_blank" rel="noreferrer">DeepBook Predict</a>
+          <span className="cb-dot">·</span>
+          <span className="cb-mut">powered by</span>
+          <a className="cb-item cb-sui" href="https://sui.io" target="_blank" rel="noreferrer">Sui</a>
+        </div>
         <div className="foot-row">
           <span className="net-badge"><span className="nb-dot" />Sui Testnet · live</span>
-          <span className="foot-sep">Predict Quant Suite · open source on <a href="https://github.com/codedforum/predict-quant-suite" target="_blank" rel="noreferrer">github</a> · built on <a href="https://docs.sui.io/onchain-finance/deepbook-predict/" target="_blank" rel="noreferrer">DeepBook Predict</a></span>
+          <span className="foot-sep">open source on <a href="https://github.com/codedforum/predict-quant-suite" target="_blank" rel="noreferrer">github</a> · <a href="https://predict-api.smartcodedbot.com" target="_blank" rel="noreferrer">live API</a></span>
           <span className="foot-hint">press <kbd>⌘K</kbd> for commands</span>
         </div>
       </footer>

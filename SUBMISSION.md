@@ -14,7 +14,7 @@ Deadline: 2026-06-21 PT. Save as draft now to reserve the name, finalize after t
 | **Deployment Network** | `Sui Testnet` |
 | **Contract Address** | `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` |
 | **Project Repo** | `https://github.com/codedforum/predict-quant-suite` |
-| **Website** | `https://predict.smartcoded.xyz` |
+| **Website** | `https://predict.smartcodedbot.com` |
 | **Demo Video** | (paste YouTube URL after recording — script below) |
 | **Team** | olawuwo nurudeen + poc |
 
@@ -46,7 +46,7 @@ Built for Sui Overflow 2026. Mainnet redeploy planned for Predict mainnet day-on
 
 ## Demo video script (target 2:30, hard cap 3:00)
 
-Record at https://predict.smartcoded.xyz. Keyboard: `1`-`6` switch tabs, `C` calculator, `R` reset 3D camera, `A` auto-rotate.
+Record at https://predict.smartcodedbot.com. Keyboard: `1`-`6` switch tabs, `C` calculator, `R` reset 3D camera, `A` auto-rotate.
 
 - **0:00-0:15 — Hook.** "This is Predict Quant Suite, built on DeepBook Predict, Sui's on-chain options primitive. It's a full vol-surface analytics stack and a trading bot, and it mints real positions on testnet. Let me show you."
 - **0:15-0:45 — Surface tab (press `1`, `A` to auto-rotate).** "Every live Predict oracle, as a 3D volatility surface straight from on-chain SVI parameters. Toggle implied vol, delta, vega, gamma. Here's the smile cross-section and the implied-probability histogram. No indexer dependency — this reads the chain directly."

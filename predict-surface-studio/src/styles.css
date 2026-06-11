@@ -1412,3 +1412,28 @@ html, body { background: var(--bg-deep); }
 .foot-hint { font-family: var(--mono); font-size: 11px; color: var(--t3); }
 .foot-hint kbd { font-family: var(--mono); font-size: 10px; padding: 1px 5px; border-radius: 4px; background: var(--elev-1); border: 1px solid var(--border); color: var(--t2); }
 @media (max-width: 640px) { .foot-hint { display: none; } }
+
+/* ============================================================
+   CO-BRANDING (2026-06-11): SmartCodedBot × DeepBook × Sui
+   ============================================================ */
+:root { --smartcoded: #f97316; --deepbook: #22d3ee; }
+
+/* nav brand sub-line */
+.brand-sub { font-family: var(--mono); font-size: 10.5px; color: var(--t2); margin-top: 2px; letter-spacing: .01em; }
+.brand-sub b { font-weight: 700; }
+.bc-sc { color: var(--smartcoded); }
+.bc-db { color: var(--deepbook); }
+.bc-sui { color: var(--sui-blue); }
+
+/* studio mark gets a dual Sui-blue + SmartCodedBot-orange glow */
+.brand .mark { box-shadow: 0 4px 18px var(--sui-blue-glow), 0 0 16px rgba(249,115,22,.20), inset 0 1px 0 rgba(255,255,255,.25); }
+
+/* co-brand footer row */
+.cobrand { display: flex; align-items: center; justify-content: center; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; font-family: var(--mono); font-size: 12px; }
+.cb-item { font-weight: 700; letter-spacing: .01em; text-decoration: none; }
+a.cb-item:hover { text-decoration: underline; }
+.cb-sc { color: var(--smartcoded); }
+.cb-db { color: var(--deepbook); }
+.cb-sui { color: var(--sui-blue); }
+.cb-mut, .cb-x { color: var(--t3); }
+.cb-dot { color: var(--t3); opacity: .55; }
