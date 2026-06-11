@@ -1,0 +1,4 @@
+
+# local live-mint smoke test artifacts (read keystore from disk, no secrets inline)
+predict-vol-arb/test-mint.mjs
+predict-vol-arb/probe-quote.mjs

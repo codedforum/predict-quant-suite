@@ -16,7 +16,15 @@ export async function mintBinary({ user, direction, oracleId, strike, expiryMs, 
 
   if (depositUsdc && depositUsdc > 0) {
     const depositRaw = BigInt(Math.floor(depositUsdc * 1_000_000)); // dUSDC = 6 decimals
-    const [topUp] = tx.splitCoins(tx.gas, [tx.pure.u64(depositRaw)]);
+    // dUSDC is a separate coin type, NOT the SUI gas coin - split from a real dUSDC
+    // object (verified live 2026-06-11: tx.gas here aborts; deposit must come from dUSDC).
+    const coins = await suiClient.getCoins({ owner: kp.toSuiAddress(), coinType: DUSDC_TYPE });
+    if (!coins.data.length) throw new Error('no dUSDC balance to deposit - fund the wallet first');
+    const primary = coins.data[0].coinObjectId;
+    if (coins.data.length > 1) {
+      tx.mergeCoins(tx.object(primary), coins.data.slice(1).map((c) => tx.object(c.coinObjectId)));
+    }
+    const [topUp] = tx.splitCoins(tx.object(primary), [tx.pure.u64(depositRaw)]);
     tx.moveCall({
       target: `${PREDICT_PKG}::predict_manager::deposit`,
       arguments: [tx.object(managerId), topUp],
