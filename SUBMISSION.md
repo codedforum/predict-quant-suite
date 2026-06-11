@@ -1,7 +1,7 @@
 # Predict Quant Suite — DeepSurge Submission Package
 
 Platform: https://www.deepsurge.xyz/hackathons/b587dc0c-4cb8-4e63-ada5-519df38103bf
-Deadline: 2026-06-21 PT. Save as draft now to reserve the name, finalize after the video.
+Deadline: June 20 (hackathon runs May 7 to June 20). Save as draft now, finalize after the video.
 
 ---
 
@@ -10,7 +10,7 @@ Deadline: 2026-06-21 PT. Save as draft now to reserve the name, finalize after t
 | Field | Value |
 |---|---|
 | **Project Name** | `Predict Quant Suite` |
-| **Track** | `Special - DeepBook` (also tick `The Agentic Web`) |
+| **Track** | `Special - DeepBook` (one track only per DeepSurge rules) |
 | **Deployment Network** | `Sui Testnet` |
 | **Contract Address** | `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` |
 | **Project Repo** | `https://github.com/codedforum/predict-quant-suite` |
@@ -60,7 +60,7 @@ On-screen at 2:20: paste the Suiscan link https://suiscan.xyz/testnet/tx/72fCQQx
 ---
 
 ## Submission checklist
-- [x] Frontend live (predict.smartcoded.xyz, HTTP 200)
+- [x] Frontend live (predict.smartcodedbot.com, co-branded + 6 security headers)
 - [x] API live (predict-api.smartcodedbot.com, 21 endpoints)
 - [x] Vol-arb bot + dashboard running (restarted clean 2026-06-11)
 - [x] On-chain end-to-end mint proven (manager + CALL position)
@@ -68,4 +68,4 @@ On-screen at 2:20: paste the Suiscan link https://suiscan.xyz/testnet/tx/72fCQQx
 - [ ] DeepSurge form saved as draft (paste fields above)
 - [ ] Demo video recorded + YouTube URL pasted
 - [ ] TG bot deployed (BLOCKED: needs a fresh BotFather token)
-- [ ] Form finalized / submitted before Jun 21 PT
+- [ ] Form finalized / submitted before June 20
