@@ -35,6 +35,24 @@ export async function fetchLiveOracle() {
   return { oracleId: p.oracleId, forward: p.forward, expiryMs: p.expirySec * 1000, expirySec: p.expirySec };
 }
 
+const u64le = (b) => { let v = 0n; for (let i = b.length - 1; i >= 0; i--) v = (v << 8n) | BigInt(b[i]); return v; };
+let _treAddr;
+function treAddr() { if (!_treAddr) _treAddr = treasuryKeypair().toSuiAddress(); return _treAddr; }
+// Quote a strike via get_trade_amounts (devInspect). Returns {cost,payout} per contract,
+// or null if it is not mintable (out of the ask band). Used to only offer valid strikes.
+export async function quoteStrike(oracleId, expiryMs, strike, direction) {
+  const tx = new Transaction();
+  const key = tx.moveCall({ target: `${PREDICT_PKG}::market_key::${direction === 'CALL' ? 'up' : 'down'}`, arguments: [tx.pure.id(oracleId), tx.pure.u64(BigInt(expiryMs)), tx.pure.u64(BigInt(Math.floor(strike * 1e9)))] });
+  tx.moveCall({ target: `${PREDICT_PKG}::predict::get_trade_amounts`, arguments: [tx.object(PREDICT_OBJECT), tx.object(oracleId), key, tx.pure.u64(1_000_000n), tx.object('0x6')] });
+  try {
+    const r = await suiClient.devInspectTransactionBlock({ sender: treAddr(), transactionBlock: tx });
+    if (r.error) return null;
+    const rv = r.results?.[r.results.length - 1]?.returnValues;
+    if (!rv || rv.length < 2) return null;
+    return { cost: Number(u64le(rv[0][0])) / 1e6, payout: Number(u64le(rv[1][0])) / 1e6 };
+  } catch { return null; }
+}
+
 export function getOrCreateKeypair(user) {
   const enc = loadKey(user.tgId);
   if (enc) return Ed25519Keypair.fromSecretKey(decryptKey(enc));
@@ -94,5 +112,8 @@ export async function faucetDusdc(user) {
   const r = await suiClient.signAndExecuteTransaction({ signer: tre, transaction: tx, options: { showEffects: true } });
   if (r.effects?.status?.status !== 'success') throw new Error('faucet tx failed: ' + JSON.stringify(r.effects?.status));
   markFauceted(user.tgId);
-  return { digest: r.digest, balance: await getUsdcBalance(addr), address: addr, sui: '0.03', usdc: '3' };
+  try { await suiClient.waitForTransaction({ digest: r.digest, timeout: 8000 }); } catch (e) { /* balance fallback below */ }
+  let balance = await getUsdcBalance(addr);
+  if (balance < 3) balance = Number(FAUCET_USDC) / 1e6;   // index lag fallback: we just sent 3
+  return { digest: r.digest, balance, address: addr, sui: '0.03', usdc: '3' };
 }

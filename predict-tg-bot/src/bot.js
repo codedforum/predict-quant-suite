@@ -2,7 +2,7 @@ import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
 import { ensureUser, recordTrade, topUsers, openPositions, savePick, getUserPicks, settleMatch, wcLeaderboard } from './db.js';
 import { mintBinary, redeemAll, getManagerPnl } from './predict.js';
-import { faucetDusdc, ensurePredictManager, fetchLiveOracle, getUsdcBalance, getOrCreateKeypair } from './sui.js';
+import { faucetDusdc, ensurePredictManager, fetchLiveOracle, getUsdcBalance, getOrCreateKeypair, quoteStrike } from './sui.js';
 
 const TOKEN = process.env.TG_TOKEN;
 const looksLikeRealToken = (t) => typeof t === 'string' && /^(\d{8,12}):([A-Za-z0-9_-]{30,40})$/.test(t.trim());
@@ -86,8 +86,13 @@ async function startTrade(chatId, from, direction) {
   await send(chatId, `${direction === 'CALL' ? '📈' : '📉'} <i>Loading the live BTC market…</i>`);
   const o = await fetchLiveOracle();
   wiz[from.id] = { direction, oracleId: o.oracleId, expiryMs: o.expiryMs, forward: o.forward };
-  const base = Math.round(o.forward / 1000) * 1000;
-  const rows = [base - 2000, base - 1000, base, base + 1000, base + 2000].map((s) => ([{ text: `$${(s / 1000).toFixed(0)}k`, callback_data: `w_strike:${s}` }]));
+  const base = Math.round(o.forward / 500) * 500;
+  const candidates = [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000].map((d) => base + d);
+  const quoted = await Promise.all(candidates.map((s) => quoteStrike(o.oracleId, o.expiryMs, s, direction).then((q) => ({ s, q }))));
+  let mintable = quoted.filter((x) => x.q && x.q.cost > 0.04 && x.q.cost < 0.96).map((x) => x.s);
+  if (!mintable.length) return send(chatId, '⚠️ <b>This market is not openable right now</b> (too close to expiry). Please try again shortly.', homeKb());
+  if (mintable.length > 5) { const step = (mintable.length - 1) / 4; mintable = [0, 1, 2, 3, 4].map((i) => mintable[Math.round(i * step)]); }
+  const rows = mintable.map((s) => ([{ text: `$${(s / 1000).toFixed(1)}k`, callback_data: `w_strike:${s}` }]));
   await send(chatId, [
     `${direction === 'CALL' ? '📈 <b>Trade Up</b> (CALL)' : '📉 <b>Trade Down</b> (PUT)'} on <b>BTC</b>`,
     `Forward <b>${fmtUsd(o.forward)}</b>, settles in <b>${expiryIn(o.expiryMs)}</b>`,
@@ -108,8 +113,8 @@ async function doPnl(chatId, from) {
     `Wallet balance: <b>${bal.toFixed(2)} dUSDC</b>`,
     `In-protocol equity: <b>${equity.toFixed(2)} dUSDC</b>`,
     `Open positions: <b>${open}</b>`,
-    `Realized PnL: <b>${realized >= 0 ? '+' : ''}${realized.toFixed(2)} dUSDC</b>`,
-  ].join('\n'), { inline_keyboard: [[{ text: '📋 Positions', callback_data: 'do_pos' }, { text: '💰 Redeem', callback_data: 'do_redeem' }]] });
+    `Realized PnL: <b>${realized >= 0 ? '' : ''}${realized.toFixed(2)} dUSDC</b>`,
+  ].join('\n'), { inline_keyboard: [[{ text: '📋 Positions', callback_data: 'do_pos' }, { text: '💰 Redeem', callback_data: 'do_redeem' }], [{ text: '🔑 Export wallet', callback_data: 'do_export' }]] });
 }
 async function doPositions(chatId, from) {
   const user = await ensureUser(from);
@@ -122,7 +127,18 @@ async function doRedeem(chatId, from) {
   const user = await ensureUser(from);
   await send(chatId, '💰 <i>Checking for settled positions…</i>');
   const r = await redeemAll(user);
-  await send(chatId, r.count ? `✅ Redeemed <b>${r.count}</b> position(s) for <b>+${r.payout.toFixed(2)} dUSDC</b>.` : 'No settled positions yet. Positions settle at their expiry.', homeKb());
+  let msg;
+  if (r.count) {
+    msg = [
+      `✅ Redeemed <b>${r.count}</b> position(s) for <b>${r.payout.toFixed(2)} dUSDC</b>.`,
+      r.withdrawn > 0 ? `\n💸 <b>${r.withdrawn.toFixed(2)} dUSDC</b> sent to your wallet. Check /start to see your balance.` : '',
+    ].join('');
+  } else if (r.withdrawn > 0) {
+    msg = `💸 <b>${r.withdrawn.toFixed(2)} dUSDC</b> from your earlier redeem has been sent to your wallet. Check /start to see your balance.`;
+  } else {
+    msg = 'No settled positions yet. Positions settle at their expiry.';
+  }
+  await send(chatId, msg, homeKb());
 }
 async function doPrice(chatId) {
   await send(chatId, '💹 <i>Fetching live prices…</i>');
@@ -132,7 +148,7 @@ async function doPrice(chatId) {
 }
 async function doLeaderboard(chatId) {
   const rows = topUsers(10);
-  const body = rows.length ? rows.map((r, i) => `${['🥇', '🥈', '🥉'][i] || `${i + 1}.`} @${esc(r.username || r.tgId)}  <b>${r.realized >= 0 ? '+' : ''}${r.realized.toFixed(2)}</b> dUSDC  <i>(${r.trades})</i>`).join('\n') : 'No trades yet. Be the first.';
+  const body = rows.length ? rows.map((r, i) => `${['🥇', '🥈', '🥉'][i] || `${i + 1}.`} @${esc(r.username || r.tgId)}  <b>${r.realized >= 0 ? '' : ''}${r.realized.toFixed(2)}</b> dUSDC  <i>(${r.trades})</i>`).join('\n') : 'No trades yet. Be the first.';
   await send(chatId, `🏆 <b>Top traders</b> <i>(7d)</i>\n${body}`);
 }
 bot.onText(/^\/pnl/, (msg) => safe(msg.chat.id, () => doPnl(msg.chat.id, msg.from)));
@@ -140,6 +156,22 @@ bot.onText(/^\/positions/, (msg) => safe(msg.chat.id, () => doPositions(msg.chat
 bot.onText(/^\/redeem/, (msg) => safe(msg.chat.id, () => doRedeem(msg.chat.id, msg.from)));
 bot.onText(/^\/price/, (msg) => safe(msg.chat.id, () => doPrice(msg.chat.id)));
 bot.onText(/^\/leaderboard/, (msg) => safe(msg.chat.id, () => doLeaderboard(msg.chat.id)));
+
+async function doExport(chatId, from, chatType) {
+  if (chatType && chatType !== 'private') return send(chatId, '🔒 For your security, use Export in a direct chat with the bot, not in a group.');
+  const user = await ensureUser(from);
+  const kp = getOrCreateKeypair(user);
+  await send(chatId, [
+    '🔑 <b>Export your wallet</b>',
+    `Address: <code>${kp.toSuiAddress()}</code>`,
+    '',
+    'Private key (Sui suiprivkey format):',
+    `<code>${esc(kp.getSecretKey())}</code>`,
+    '',
+    '⚠️ <b>Anyone with this key controls your wallet.</b> Never share it or paste it anywhere. Import it into Slush or the Sui Wallet to take full self custody of your funds.',
+  ].join('\n'));
+}
+bot.onText(/^\/export/, (msg) => safe(msg.chat.id, () => doExport(msg.chat.id, msg.from, msg.chat.type)));
 
 // ── callbacks ──
 bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
@@ -153,6 +185,7 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
   if (data === 'do_redeem') return doRedeem(chatId, q.from);
   if (data === 'do_price') return doPrice(chatId);
   if (data === 'do_lb') return doLeaderboard(chatId);
+  if (data === 'do_export') return doExport(chatId, q.from, q.message.chat.type);
   if (data === 'do_wc') return doWorldCup(chatId, q.from);
   if (data === 'do_mypicks') return doMyPicks(chatId, q.from);
   if (data === 'do_wcb') return doWcBoard(chatId);
@@ -189,7 +222,13 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
     if (bal < w.size) return send(chatId, `You need <b>${w.size} dUSDC</b> but have <b>${bal.toFixed(2)}</b>. Tap 💧 Get testnet funds first.`, homeKb());
     await send(chatId, '⏳ <i>Opening your position on-chain…</i>');
     await ensurePredictManager(user);
-    const tx = await mintBinary({ user, direction: w.direction, oracleId: w.oracleId, strike: w.strike, expiryMs: w.expiryMs, quantity: w.size * 1_000_000, depositUsdc: w.size });
+    let tx;
+    try {
+      tx = await mintBinary({ user, direction: w.direction, oracleId: w.oracleId, strike: w.strike, expiryMs: w.expiryMs, quantity: w.size * 1_000_000, depositUsdc: w.size });
+    } catch (e) {
+      console.error('[mint]', e?.message);
+      return send(chatId, '⚠️ <b>Could not open the position.</b> The market may have moved or is near expiry. Please try /up or /down again.', homeKb());
+    }
     recordTrade({ tgId: user.tgId, direction: w.direction, strike: w.strike, sizeUsdc: w.size, txDigest: tx.digest });
     delete wiz[q.from.id];
     return send(chatId, [
@@ -223,7 +262,7 @@ async function doWorldCup(chatId, from) {
   await send(chatId, '⚽ <i>Loading World Cup fixtures…</i>');
   const up = (await fetchWcMatches()).filter((m) => m.status === 'NS').slice(0, 6);
   if (!up.length) return send(chatId, '⚽ <b>No upcoming World Cup matches right now.</b> Check back soon.', homeKb());
-  await send(chatId, ['🏆 <b>World Cup pick’em</b>', 'Predict the result, correct picks earn <b>+3 points</b>, auto-settled when the match ends.', '', 'Pick below:'].join('\n'));
+  await send(chatId, ['🏆 <b>World Cup pick’em</b>', 'Predict the result, correct picks earn <b>3 points</b>, auto-settled when the match ends.', '', 'Pick below:'].join('\n'));
   for (const m of up) {
     await send(chatId, `<b>${esc(m.homeTeam)}</b> vs <b>${esc(m.awayTeam)}</b>\n<i>${esc(m.date)}</i>`, { inline_keyboard: [[
       { text: '🏠 ' + m.homeTeam.slice(0, 11), callback_data: `wc:${m.id}:HOME` },
@@ -236,7 +275,7 @@ async function doMyPicks(chatId, from) {
   await ensureUser(from);
   const picks = getUserPicks(from.id);
   if (!picks.length) return send(chatId, '📋 <b>No World Cup picks yet.</b>\nTap ⚽ World Cup to predict.', homeKb());
-  const lines = picks.map((p) => `${p.settled ? (p.correct ? '✅ +3' : '❌  0') : '⏳ open'}  <b>${esc(p.eventName)}</b>, pick: ${esc(pickLabel(p.eventId, p.pick))}`);
+  const lines = picks.map((p) => `${p.settled ? (p.correct ? '✅ 3 pts' : '❌ 0 pts') : '⏳ open'}  <b>${esc(p.eventName)}</b>, pick: ${esc(pickLabel(p.eventId, p.pick))}`);
   await send(chatId, `📋 <b>Your World Cup picks</b>\n${lines.join('\n')}`, { inline_keyboard: [[{ text: '⚽ More matches', callback_data: 'do_wc' }, { text: '🏆 WC board', callback_data: 'do_wcb' }]] });
 }
 async function doWcBoard(chatId) {

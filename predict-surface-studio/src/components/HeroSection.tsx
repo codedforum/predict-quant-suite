@@ -81,7 +81,7 @@ export default function HeroSection({ surface, oracles, current, stats }: Props)
       <div className="proof-row">
         <span className="proof-label">Proven on Sui testnet</span>
         <a className="proof-link" href={MINT_TX} target="_blank" rel="noreferrer">mint ↗</a>
-        <a className="proof-link" href={REDEEM_TX} target="_blank" rel="noreferrer">redeem (+profit) ↗</a>
+        <a className="proof-link" href={REDEEM_TX} target="_blank" rel="noreferrer">redeem for profit ↗</a>
         <a className="proof-link ghost" href="https://github.com/codedforum/predict-quant-suite" target="_blank" rel="noreferrer">source ↗</a>
       </div>
 

@@ -115,12 +115,51 @@ export async function redeemOne({ user, oracleId, expiry, strike, isUp, quantity
   return { digest: r.digest, payout: Number(ev?.parsedJson?.payout ?? 0) / 1e6 };
 }
 
-// Walk every open position for the user, call redeemOne on each.
-// Errors per-position are caught so one bad redeem does not abort the batch.
-// On success, the position is marked redeemed in the local DB with the payout.
+// Read the manager's raw free balance (u64) as a BigInt. The devInspect sender
+// must be a real address (this RPC rejects '0x0' with InvalidParams).
+async function managerBalanceRaw(managerId, sender) {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${PREDICT_PKG}::predict_manager::balance`,
+    arguments: [tx.object(managerId)],
+    typeArguments: [DUSDC_TYPE],
+  });
+  const r = await suiClient.devInspectTransactionBlock({ sender, transactionBlock: tx });
+  const bytes = r.results?.[0]?.returnValues?.[0]?.[0];
+  if (!bytes || !bytes.length) return 0n;
+  let v = 0n;
+  for (let i = bytes.length - 1; i >= 0; i--) v = (v << 8n) | BigInt(bytes[i]);
+  return v;
+}
+
+// Sweep the manager's entire free balance (redeem payouts + any leftover deposit)
+// back to the user's own wallet as a dUSDC coin. predict::redeem credits the
+// payout INTO the manager, so without this the user never sees the dUSDC.
+export async function withdrawManager(user) {
+  const kp = getOrCreateKeypair(user);
+  const addr = kp.toSuiAddress();
+  const managerId = loadPredictManagerId(user.tgId);
+  if (!managerId) return { withdrawn: 0 };
+  const raw = await managerBalanceRaw(managerId, addr);
+  if (raw <= 0n) return { withdrawn: 0 };
+  const tx = new Transaction();
+  const [coin] = tx.moveCall({
+    target: `${PREDICT_PKG}::predict_manager::withdraw`,
+    arguments: [tx.object(managerId), tx.pure.u64(raw)],
+    typeArguments: [DUSDC_TYPE],
+  });
+  tx.transferObjects([coin], tx.pure.address(kp.toSuiAddress()));
+  const r = await suiClient.signAndExecuteTransaction({ signer: kp, transaction: tx, options: { showEffects: true } });
+  if (r.effects?.status?.status !== 'success') throw new Error('withdraw failed: ' + JSON.stringify(r.effects?.status));
+  return { withdrawn: Number(raw) / 1e6, digest: r.digest };
+}
+
+// Walk every open position for the user, call redeemOne on each, then sweep the
+// manager's free balance back to the wallet. The sweep runs ALWAYS (even with no
+// open positions) so funds from any earlier redeem that got stuck in the manager
+// are rescued the next time the user taps redeem.
 export async function redeemAll(user) {
   const positions = openPositions(user.tgId);
-  if (!positions.length) return { count: 0, payout: 0, failures: 0 };
 
   let payout = 0;
   let count = 0;
@@ -145,7 +184,14 @@ export async function redeemAll(user) {
       failures += 1;
     }
   }
-  return { count, payout: Number(payout.toFixed(4)), failures };
+
+  let withdrawn = 0;
+  try {
+    withdrawn = (await withdrawManager(user)).withdrawn;
+  } catch (e) {
+    console.warn('[redeemAll] manager sweep failed:', e.message);
+  }
+  return { count, payout: Number(payout.toFixed(4)), failures, withdrawn: Number(withdrawn.toFixed(4)) };
 }
 
 // PnL summary for /pnl. Realized comes from the local DB (sum of payouts minus
@@ -171,16 +217,7 @@ export async function getManagerPnl(user) {
 export async function getManagerBalance(user) {
   const managerId = loadPredictManagerId(user.tgId);
   if (!managerId) return { balance: 0 };
-  const obj = await suiClient.getObject({ id: managerId, options: { showContent: true } });
-  // PredictManager wraps a balance_manager - exact field traversal depends on the deepbook version.
-  // For now read the manager's reported balance via the balance helper view.
-  const tx = new Transaction();
-  tx.moveCall({
-    target: `${PREDICT_PKG}::predict_manager::balance`,
-    arguments: [tx.object(managerId)],
-    typeArguments: [DUSDC_TYPE],
-  });
-  const r = await suiClient.devInspectTransactionBlock({ sender: '0x0', transactionBlock: tx });
-  const raw = r.results?.[0]?.returnValues?.[0]?.[0]?.[0] ?? 0;
+  const addr = getOrCreateKeypair(user).toSuiAddress();
+  const raw = await managerBalanceRaw(managerId, addr);
   return { balance: Number(raw) / 1e6 };
 }
