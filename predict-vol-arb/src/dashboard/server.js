@@ -9,7 +9,7 @@ import { refreshHedge } from '../hedger.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://predict.smartcoded.xyz,http://localhost:5173')
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://predict.smartcodedbot.com,http://localhost:5173')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
 app.use((req, res, next) => {
@@ -187,10 +187,16 @@ app.post('/api/webhook', async (req, res) => {
   try {
     const { url, text } = req.body || {};
     if (!url || typeof url !== 'string') throw new Error('url required');
-    if (!/^https:\/\/(hooks\.slack\.com|discord(app)?\.com|discord\.com)/i.test(url)) {
+    // Parse and check the exact hostname. A regex like /^https:\/\/hooks\.slack\.com/
+    // is bypassable by hooks.slack.com.evil.com (no anchor after the host), so use URL().
+    let parsed;
+    try { parsed = new URL(url); } catch { throw new Error('invalid url'); }
+    const ALLOWED_HOOKS = new Set(['hooks.slack.com', 'discord.com', 'discordapp.com', 'ptb.discord.com', 'canary.discord.com']);
+    const host = parsed.hostname.toLowerCase();
+    if (parsed.protocol !== 'https:' || !ALLOWED_HOOKS.has(host)) {
       throw new Error('only slack and discord webhooks accepted');
     }
-    const isSlack = /hooks\.slack\.com/.test(url);
+    const isSlack = host === 'hooks.slack.com';
     const body = isSlack ? { text } : { content: text };
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     res.json({ ok: r.ok, status: r.status });

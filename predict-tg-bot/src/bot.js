@@ -228,12 +228,17 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
   const w = wiz[q.from.id];
   if (data.startsWith('w_strike:')) {
     if (!w) return send(chatId, 'Trade expired, start again with /up or /down.');
-    w.strike = parseInt(data.split(':')[1], 10);
+    // callback_data is client-supplied; never trust it. Validate before storing.
+    const strike = parseInt(data.split(':')[1], 10);
+    if (!Number.isFinite(strike) || strike <= 0 || strike > 100_000_000) return send(chatId, 'Invalid strike, start again with /up or /down.', homeKb());
+    w.strike = strike;
     return send(chatId, `Strike <b>$${(w.strike / 1000).toFixed(0)}k</b> selected.\nHow much dUSDC to commit?`, { inline_keyboard: [[1, 2, 3].map((s) => ({ text: `${s} dUSDC`, callback_data: `w_size:${s}` }))] });
   }
   if (data.startsWith('w_size:')) {
     if (!w || !w.strike) return send(chatId, 'Trade expired, start again with /up or /down.');
-    w.size = parseInt(data.split(':')[1], 10);
+    const size = parseInt(data.split(':')[1], 10);
+    if (![1, 2, 3].includes(size)) return send(chatId, 'Please pick a size of 1, 2 or 3 dUSDC.', homeKb());
+    w.size = size;
     return send(chatId, [
       '<b>Confirm your trade</b>',
       `${w.direction === 'CALL' ? '📈 CALL (up)' : '📉 PUT (down)'} BTC`,
