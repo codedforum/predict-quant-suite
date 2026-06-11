@@ -85,6 +85,15 @@ export default function HeroSection({ surface, oracles, current, stats }: Props)
         <a className="proof-link ghost" href="https://github.com/codedforum/predict-quant-suite" target="_blank" rel="noreferrer">source ↗</a>
       </div>
 
+      <a className="hero-bot" href="https://t.me/TheSmartPredictBot" target="_blank" rel="noreferrer">
+        <span className="hb-ic">✈</span>
+        <div className="hb-text">
+          <div className="hb-h">Also live: trade from Telegram</div>
+          <div className="hb-d"><b>@TheSmartPredictBot</b>, one-tap up or down on BTC with a real testnet faucet. Self custody, you own the wallet.</div>
+        </div>
+        <span className="hb-cta">Open ↗</span>
+      </a>
+
       <div className="live-grid">
         <div className="live-card">
           <div className="v" ref={fwdRef as any}>{surface ? `$${surface.primary.forward.toFixed(0)}` : '--'}</div>

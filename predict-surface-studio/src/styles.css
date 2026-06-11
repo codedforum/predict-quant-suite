@@ -1509,7 +1509,7 @@ a.cb-item:hover { text-decoration: underline; }
 }
 
 /* ============================================================
-   Detailed landing hero (2026-06-11) — brand, pillars, on-chain proof
+   Detailed landing hero (2026-06-11), brand, pillars, on-chain proof
    ============================================================ */
 .hero-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
 .hero-mark{width:44px;height:44px;border-radius:12px;box-shadow:var(--shadow-glow,0 8px 24px var(--sui-blue-glow));}
@@ -1530,3 +1530,14 @@ a.cb-item:hover { text-decoration: underline; }
 .proof-link{color:var(--sui-blue);text-decoration:none;border:1px solid var(--border-2,var(--border));border-radius:999px;padding:4px 12px;transition:all .15s;}
 .proof-link:hover{border-color:var(--sui-blue);background:var(--glass);color:var(--sui-blue-light,var(--sui-blue));}
 .proof-link.ghost{color:var(--t2);}
+
+/* ---- landing: telegram bot card ---- */
+.hero-bot{display:flex;align-items:center;gap:14px;margin-bottom:24px;padding:14px 18px;border-radius:var(--r-lg,18px);text-decoration:none;background:linear-gradient(135deg,rgba(34,211,238,.10),var(--card));border:1px solid var(--border);transition:all .15s;}
+.hero-bot:hover{border-color:var(--deepbook,#22d3ee);transform:translateY(-1px);}
+.hb-ic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;background:var(--beam,linear-gradient(135deg,#2b7fff,#22d3ee));flex-shrink:0;}
+.hb-text{flex:1;min-width:0;}
+.hb-h{font-family:var(--sg);font-weight:700;font-size:14px;color:var(--t1);}
+.hb-d{font-size:12px;color:var(--t2);margin-top:2px;line-height:1.5;}
+.hb-d b{color:var(--deepbook,#22d3ee);}
+.hb-cta{font-family:var(--sg);font-weight:700;font-size:13px;color:var(--sui-blue);flex-shrink:0;}
+@media(max-width:520px){.hero-bot{flex-wrap:wrap;}.hb-cta{width:100%;}}
