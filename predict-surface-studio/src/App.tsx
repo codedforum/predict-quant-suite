@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import SurfaceViewer from './components/SurfaceViewer';
+import CommandPalette from './components/CommandPalette';
 import OracleList from './components/OracleList';
 import SviParamsCard from './components/SviParamsCard';
 import ArbStatus from './components/ArbStatus';
@@ -112,6 +113,10 @@ export default function App() {
   const [surfaceMode, setSurfaceMode] = useState<'3d' | '2d'>('3d');
   const [tourOpen, setTourOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [lastSync, setLastSync] = useState(0);
+  const [, setNowTick] = useState(0);
+  const refreshRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     if (shouldShowTour()) setTimeout(() => setTourOpen(true), 1500);
@@ -128,22 +133,31 @@ export default function App() {
       setOracles(snaps);
       setIdx((cur) => Math.min(cur, Math.max(0, snaps.length - 1)));
       setError(null);
+      setLastSync(Date.now());
     };
     const tickStats = async () => {
       const s = await fetchStats();
       if (!cancelled && s) setStats(s);
     };
+    refreshRef.current = () => { tickSurface(); tickStats(); };
     tickSurface(); tickStats();
     const ids = [setInterval(tickSurface, 15000), setInterval(tickStats, 60000)];
     return () => { cancelled = true; ids.forEach(clearInterval); };
+  }, []);
+
+  // light tick so the "updated Ns ago" status reads as live between fetches
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((t) => (t + 1) % 1000000), 5000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => { if (typeof location !== 'undefined') location.hash = tab; }, [tab]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); setPaletteOpen((v) => !v); return; }
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
-      if (e.key === 'Escape') { setCalcOpen(false); setAboutOpen(false); return; }
+      if (e.key === 'Escape') { setCalcOpen(false); setAboutOpen(false); setPaletteOpen(false); return; }
       if (e.key === 'c' || e.key === 'C') { setCalcOpen((v) => !v); return; }
       if (e.key === '?' || (e.shiftKey && e.key === '/')) { setAboutOpen((v) => !v); return; }
       const num = parseInt(e.key, 10);
@@ -165,6 +179,13 @@ export default function App() {
           </div>
         </a>
         <div className="nav-actions">
+          <button className="nav-status" onClick={() => refreshRef.current()} title="Refresh now">
+            <span className="ns-dot" />
+            <span className="ns-txt">live</span>
+            {lastSync > 0 && (() => { const a = Math.floor((Date.now() - lastSync) / 1000); return <span className="ns-age">{a < 60 ? `${a}s` : `${Math.floor(a / 60)}m`}</span>; })()}
+            <span className="ns-refresh">↻</span>
+          </button>
+          <button className="btn btn-ghost cmd-btn" onClick={() => setPaletteOpen(true)} title="Command palette (⌘K)"><span className="cmd-k">⌘K</span></button>
           <button className="btn btn-ghost" onClick={() => setTourOpen(true)} title="Take tour">Tour</button>
           <button className="btn btn-ghost" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
           <button className="btn btn-ghost" onClick={() => setAboutOpen(true)} title="About (?)">About</button>
@@ -206,6 +227,19 @@ export default function App() {
       {drillOracle && <OracleDrilldown oracleId={drillOracle} onClose={() => setDrillOracle(null)} />}
       <TourMode open={tourOpen} onClose={() => setTourOpen(false)} onTabChange={(t) => setTab(t as TabKey)} />
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        tabs={TABS}
+        onTab={(k) => setTab(k as TabKey)}
+        oracles={oracles}
+        onSelectOracle={(i) => setIdx(i)}
+        onOpenCalc={() => setCalcOpen(true)}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenAbout={() => setAboutOpen(true)}
+        onStartTour={() => setTourOpen(true)}
+        onRefresh={() => refreshRef.current()}
+      />
       <Toasts />
     </div>
   );
