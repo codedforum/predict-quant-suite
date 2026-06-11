@@ -1403,3 +1403,12 @@ html, body { background: var(--bg-deep); }
 .cmdk-item.active .cmdk-hint { color: var(--sui-blue-light); }
 .cmdk-empty { padding: 26px 12px; text-align: center; color: var(--t3); font-family: var(--mono); font-size: 13px; }
 .cmdk-foot { display: flex; align-items: center; gap: 5px; padding: 9px 14px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--t3); }
+
+/* footer status bar polish */
+.foot-row { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.net-badge { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; color: var(--green);
+  background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.25); padding: 4px 10px; border-radius: 999px; }
+.nb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: ssPulse 2s infinite; }
+.foot-hint { font-family: var(--mono); font-size: 11px; color: var(--t3); }
+.foot-hint kbd { font-family: var(--mono); font-size: 10px; padding: 1px 5px; border-radius: 4px; background: var(--elev-1); border: 1px solid var(--border); color: var(--t2); }
+@media (max-width: 640px) { .foot-hint { display: none; } }

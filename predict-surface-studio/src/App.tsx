@@ -217,7 +217,11 @@ export default function App() {
       </main>
 
       <footer className="foot">
-        <div>Predict Quant Suite · open source on <a href="https://github.com/codedforum/predict-quant-suite" target="_blank" rel="noreferrer">github</a> · built on <a href="https://docs.sui.io/onchain-finance/deepbook-predict/" target="_blank" rel="noreferrer">DeepBook Predict</a></div>
+        <div className="foot-row">
+          <span className="net-badge"><span className="nb-dot" />Sui Testnet · live</span>
+          <span className="foot-sep">Predict Quant Suite · open source on <a href="https://github.com/codedforum/predict-quant-suite" target="_blank" rel="noreferrer">github</a> · built on <a href="https://docs.sui.io/onchain-finance/deepbook-predict/" target="_blank" rel="noreferrer">DeepBook Predict</a></span>
+          <span className="foot-hint">press <kbd>⌘K</kbd> for commands</span>
+        </div>
       </footer>
 
       {calcOpen && oracles.length > 0 && (

@@ -18,10 +18,11 @@ Deadline: 2026-06-21 PT. Save as draft now to reserve the name, finalize after t
 | **Demo Video** | (paste YouTube URL after recording — script below) |
 | **Team** | olawuwo nurudeen + poc |
 
-Live on-chain proof points to mention (all verifiable on Sui testnet):
-- First end-to-end mint: tx `72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr`
-- PredictManager: `0xfd03ac6b53abec4d369c93a1697491c33751bc970823d768081fafbb53da3a5e`
-- Position: CALL on BTC oracle, strike $63,000, settled against live SVI pricing
+Live on-chain proof points to mention (all verifiable on Sui testnet) — the FULL trade lifecycle:
+- create_manager: PredictManager `0xfd03ac6b53abec4d369c93a1697491c33751bc970823d768081fafbb53da3a5e`
+- mint: CALL on BTC oracle, strike $63,000 — tx `72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr` (cost 0.358 dUSDC)
+- redeem (early exit, sold back to the vault at bid): tx `DuKoWRSUvd2XyU2f73LmQeAJK6AQCw8De12vdCujtt8v` (payout 0.536 dUSDC → +0.18 realized P&L)
+- Every leg priced live against the on-chain Gatheral SVI surface.
 
 ---
 
