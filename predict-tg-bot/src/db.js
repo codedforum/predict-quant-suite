@@ -38,6 +38,12 @@ CREATE TABLE IF NOT EXISTS trades (
 CREATE INDEX IF NOT EXISTS idx_trades_user ON trades(tg_id, created_at);
 `);
 
+// migration: one-time faucet claim flag (safe to re-run)
+try { db.exec(`ALTER TABLE users ADD COLUMN faucet_claimed INTEGER DEFAULT 0`); } catch (e) { /* column exists */ }
+
+export function hasFauceted(tgId) { return Boolean(db.prepare('SELECT faucet_claimed FROM users WHERE tg_id = ?').get(tgId)?.faucet_claimed); }
+export function markFauceted(tgId) { db.prepare('UPDATE users SET faucet_claimed = 1 WHERE tg_id = ?').run(tgId); }
+
 export async function ensureUser(from) {
   const row = db.prepare('SELECT tg_id FROM users WHERE tg_id = ?').get(from.id);
   if (!row) {
