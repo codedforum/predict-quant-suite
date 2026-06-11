@@ -74,6 +74,28 @@ function SurfaceStatBar({ snap }: { snap?: SviSnapshot }) {
   );
 }
 
+// ATM implied vol for any oracle snapshot, computed live from its SVI params.
+function atmIvOf(s: SviSnapshot): number {
+  const T = Math.max(1 / (365 * 24), (s.expirySec * 1000 - Date.now()) / (365 * 24 * 3600 * 1000));
+  return sviIv(s.svi, 0, T);
+}
+
+// Generic live metric bar reused across tabs (shares .surf-statbar styling).
+function MetricBar({ items }: { items: { l: string; v: string; accent?: boolean; tone?: string; live?: boolean }[] }) {
+  return (
+    <div className="surf-statbar">
+      {items.map((it, i) => (
+        <div className={'surf-stat' + (it.live ? ' src' : '')} key={i}>
+          <span className="ss-l">{it.l}</span>
+          <span className={'ss-v' + (it.accent ? ' accent' : '') + (it.tone ? ' ' + it.tone : '') + (it.live ? ' live' : '')}>
+            {it.live ? <><i className="ss-dot" />{it.v}</> : it.v}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
   const [oracles, setOracles] = useState<SviSnapshot[]>([]);
   const [surface, setSurface] = useState<SurfaceResponse | null>(null);
@@ -257,43 +279,68 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
   }
 
   if (tab === 'smile') {
+    const ivs = (oracles as SviSnapshot[]).map(atmIvOf).filter(Number.isFinite).map((v: number) => v * 100);
+    const ivLo = ivs.length ? Math.min(...ivs) : 0, ivHi = ivs.length ? Math.max(...ivs) : 0;
     return (
-      <div className="tab-panel">
-        <section className="card glow tall" style={{ minHeight: 480 }}>
-          <div className="card-head"><h2>Smile Overlay</h2><span className="meta">all live oracles</span></div>
-          <div className="card-body card-body-flex" style={{ minHeight: 420 }}>
+      <div className="tab-panel surface-page">
+        <section className="card glow tall surface-hero" style={{ minHeight: 520 }}>
+          <div className="card-head">
+            <div className="ch-title"><h2>Smile Overlay</h2><span className="hero-tag">all live oracles · log-moneyness</span></div>
+            <span className="meta">{oracles.length} oracles</span>
+          </div>
+          {oracles.length ? <MetricBar items={[
+            { l: 'Live oracles', v: String(oracles.length), accent: true },
+            { l: 'ATM IV range', v: `${ivLo.toFixed(1)}–${ivHi.toFixed(1)}%` },
+            { l: 'Forward', v: current ? `$${(current.forward / 1000).toFixed(1)}k` : '—' },
+            { l: 'Curves', v: 'live', live: true },
+          ]} /> : null}
+          <div className="card-body card-body-flex" style={{ minHeight: 400 }}>
             {oracles.length ? <MultiSmilePlot oracles={oracles} selectedIdx={idx} /> : skel}
           </div>
         </section>
         <div className="two-col">
-          <section className="card">
-            <div className="card-head"><h2>Compare A vs B</h2><span className="meta">side-by-side params</span></div>
+          <section className="card glow">
+            <div className="card-head"><div className="ch-title"><h2>Compare A vs B</h2></div><span className="meta">side-by-side params</span></div>
             {oracles.length ? <CompareOraclesPanel oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : skel}
           </section>
-          <section className="card">
-            <div className="card-head"><h2>Pick oracle</h2></div>
-            <div className="card-body" style={{ padding: 0 }}>
-              {oracles.length ? <OracleList oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : skel}
-            </div>
-          </section>
+          <aside className="side">
+            <section className="card">
+              <div className="card-head"><h2>Pick oracle</h2><span className="meta">{oracles.length}</span></div>
+              <div className="card-body" style={{ padding: 0 }}>
+                {oracles.length ? <OracleList oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : skel}
+              </div>
+            </section>
+          </aside>
         </div>
       </div>
     );
   }
 
   if (tab === 'term') {
+    const days = (oracles as SviSnapshot[]).map((o) => Math.max(0, (o.expirySec * 1000 - Date.now()) / 86400000));
+    const near = days.length ? Math.min(...days) : 0, far = days.length ? Math.max(...days) : 0;
     return (
-      <div className="tab-panel">
-        <section className="card glow tall" style={{ minHeight: 460 }}>
-          <div className="card-head"><h2>Term Structure</h2><span className="meta">ATM · 25Δ call · 25Δ put across days</span></div>
-          <div className="card-body card-body-flex" style={{ minHeight: 380 }}>
+      <div className="tab-panel surface-page">
+        <section className="card glow tall surface-hero" style={{ minHeight: 500 }}>
+          <div className="card-head">
+            <div className="ch-title"><h2>Term Structure</h2><span className="hero-tag">ATM · 25Δ wings across days</span></div>
+            <span className="meta">{oracles.length} expiries</span>
+          </div>
+          {oracles.length ? <MetricBar items={[
+            { l: 'Expiries', v: String(oracles.length), accent: true },
+            { l: 'Nearest', v: near < 1 ? `${(near * 24).toFixed(0)}h` : `${near.toFixed(1)}d` },
+            { l: 'Furthest', v: `${far.toFixed(1)}d` },
+            { l: 'ATM IV', v: current ? `${(atmIvOf(current) * 100).toFixed(1)}%` : '—' },
+            { l: 'Surface', v: 'live', live: true },
+          ]} /> : null}
+          <div className="card-body card-body-flex" style={{ minHeight: 360 }}>
             {oracles.length ? <TermStructurePlot oracles={oracles} /> : skel}
           </div>
         </section>
         <section className="card glow">
           <div className="card-head">
-            <h2>Volatility cone (selected oracle)</h2>
-            <span className="meta">realized BTC vol vs Predict implied vol across windows</span>
+            <div className="ch-title"><h2>Volatility cone</h2><span className="hero-tag">realized vs implied</span></div>
+            <span className="meta">selected oracle · across windows</span>
           </div>
           <div className="card-body">
             {current ? <VolatilityCone oracle={current} /> : skel}
@@ -318,6 +365,19 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
     return (
       <div className="tab-panel two-col" style={{ gridTemplateColumns: '1fr 200px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <section className="card glow surface-hero">
+            <div className="card-head">
+              <div className="ch-title"><h2>Vol-Arb Engine</h2><span className="hero-tag">Predict IV vs cross-feed · keeper</span></div>
+              <a className="meta oracle-id-link" href="https://predict-api.smartcodedbot.com" target="_blank" rel="noreferrer">live dashboard →</a>
+            </div>
+            <MetricBar items={[
+              { l: 'Mode', v: 'DRY-RUN', accent: true },
+              { l: 'Oracles', v: String(oracles.length) },
+              { l: 'Strategy', v: 'IV spread' },
+              { l: 'Hedge', v: 'Hyperliquid Δ' },
+              { l: 'Keeper', v: 'polling', live: true },
+            ]} />
+          </section>
           <section id="sec-stats" className="card">
             <div className="card-head"><h2>24h on-chain stats</h2><span className="meta">aggregated from settled events</span></div>
             <div className="card-body" style={{ padding: 0 }}><StatsRibbon /></div>
@@ -368,21 +428,26 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
 
   if (tab === 'activity') {
     return (
-      <div className="tab-panel">
+      <div className="tab-panel surface-page">
         <div className="two-col">
-          <section className="card tall" style={{ minHeight: 480 }}>
-            <div className="card-head"><h2>On-chain activity</h2><span className="meta">recent Predict events</span></div>
+          <section className="card glow tall surface-hero" style={{ minHeight: 500 }}>
+            <div className="card-head">
+              <div className="ch-title"><h2>On-chain Activity</h2><span className="hero-tag">live Predict events</span></div>
+              <span className="meta">mints · redeems · settles</span>
+            </div>
             <div className="card-body card-body-flex" style={{ padding: 0 }}>
               <ActivityFeed />
             </div>
           </section>
-          <section className="card">
-            <div className="card-head"><h2>24h Leaderboard</h2><span className="meta">top managers + #1 equity curve</span></div>
-            <LeaderboardCard />
-          </section>
+          <aside className="side">
+            <section className="card glow">
+              <div className="card-head"><div className="ch-title"><h2>24h Leaderboard</h2></div><span className="meta">top managers</span></div>
+              <LeaderboardCard />
+            </section>
+          </aside>
         </div>
-        <section className="card">
-          <div className="card-head"><h2>Activity heatmap</h2><span className="meta">7-day mint volume by hour-of-day (UTC)</span></div>
+        <section className="card glow">
+          <div className="card-head"><div className="ch-title"><h2>Activity heatmap</h2><span className="hero-tag">7-day · by hour UTC</span></div><span className="meta">mint volume</span></div>
           <HourActivityHeatmap />
         </section>
       </div>
@@ -391,29 +456,39 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
 
   if (tab === 'markets') {
     return (
-      <div className="tab-panel">
-        <section className="card tall">
-          <div className="card-head"><h2>Markets</h2><span className="meta">click row to select</span></div>
+      <div className="tab-panel surface-page">
+        <section className="card glow tall surface-hero">
+          <div className="card-head">
+            <div className="ch-title"><h2>Markets</h2><span className="hero-tag">live on-chain orderbook</span></div>
+            <span className="meta">{oracles.length} markets · click to select</span>
+          </div>
+          {oracles.length ? <MetricBar items={[
+            { l: 'Markets', v: String(oracles.length), accent: true },
+            { l: 'ATM IV', v: current ? `${(atmIvOf(current) * 100).toFixed(1)}%` : '—' },
+            { l: 'Forward', v: current ? `$${(current.forward / 1000).toFixed(1)}k` : '—' },
+            { l: 'Selected', v: current ? current.oracleId.slice(0, 8) + '…' : '—' },
+            { l: 'Quotes', v: 'live', live: true },
+          ]} /> : null}
           <div className="card-body card-body-flex" style={{ padding: 0 }}>
             {oracles.length ? <MarketsTable oracles={oracles} selectedIdx={idx} onSelect={setIdx} /> : skel}
           </div>
         </section>
         <div className="two-col">
           <section className="card glow">
-            <div className="card-head"><h2>Live order book</h2><span className="meta">on-chain quotes via devInspect</span></div>
+            <div className="card-head"><div className="ch-title"><h2>Live order book</h2></div><span className="meta">on-chain via devInspect</span></div>
             <div className="card-body" style={{ padding: 0 }}>
               {current ? <OrderBookCard oracle={current} /> : skel}
             </div>
           </section>
           <section className="card">
-            <div className="card-head"><h2>BSM strike chain</h2><span className="meta">approximated</span></div>
+            <div className="card-head"><div className="ch-title"><h2>BSM strike chain</h2></div><span className="meta">approximated</span></div>
             <div className="card-body card-body-flex" style={{ padding: 0 }}>
               {current ? <StrikeGrid snapshot={current} /> : skel}
             </div>
           </section>
         </div>
-        <section className="card">
-          <div className="card-head"><h2>24h trade flow per strike</h2><span className="meta">where the volume is going</span></div>
+        <section className="card glow">
+          <div className="card-head"><div className="ch-title"><h2>24h trade flow per strike</h2><span className="hero-tag">volume distribution</span></div></div>
           {current ? <StrikeFlowHeatmap oracle={current} /> : skel}
         </section>
       </div>
