@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
-import { ensureUser, recordTrade, topUsers, openPositions } from './db.js';
+import { ensureUser, recordTrade, topUsers, openPositions, savePick, getUserPicks, settleMatch, wcLeaderboard } from './db.js';
 import { mintBinary, redeemAll, getManagerPnl } from './predict.js';
 import { faucetDusdc, ensurePredictManager, fetchLiveOracle, getUsdcBalance, getOrCreateKeypair } from './sui.js';
 
@@ -43,6 +43,7 @@ const homeKb = () => ({ inline_keyboard: [
   [{ text: '📈 Trade Up', callback_data: 'do_up' }, { text: '📉 Trade Down', callback_data: 'do_down' }],
   [{ text: '📊 My PnL', callback_data: 'do_pnl' }, { text: '📋 Positions', callback_data: 'do_pos' }],
   [{ text: '💹 Prices', callback_data: 'do_price' }, { text: '🏆 Leaderboard', callback_data: 'do_lb' }],
+  [{ text: '⚽ World Cup pick’em', callback_data: 'do_wc' }],
 ] });
 const WELCOME = [
   '🔮 <b>Predict Quant Bot</b>',
@@ -150,6 +151,15 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
   if (data === 'do_redeem') return doRedeem(chatId, q.from);
   if (data === 'do_price') return doPrice(chatId);
   if (data === 'do_lb') return doLeaderboard(chatId);
+  if (data === 'do_wc') return doWorldCup(chatId, q.from);
+  if (data === 'do_mypicks') return doMyPicks(chatId, q.from);
+  if (data === 'do_wcb') return doWcBoard(chatId);
+  if (data.startsWith('wc:')) {
+    const [, eid, pick] = data.split(':');
+    await ensureUser(q.from);
+    savePick(q.from.id, eid, wcCache[eid]?.name || 'match', pick);
+    return send(chatId, `✅ Pick saved: <b>${esc(pickLabel(eid, pick))}</b> for <b>${esc(wcCache[eid]?.name || 'the match')}</b>.\nAuto-settles when the match ends.`, { inline_keyboard: [[{ text: '📋 My picks', callback_data: 'do_mypicks' }, { text: '⚽ More', callback_data: 'do_wc' }]] });
+  }
 
   const w = wiz[q.from.id];
   if (data.startsWith('w_strike:')) {
@@ -188,4 +198,67 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
   }
 }));
 
-console.log('predict-tg-bot up (HTML wizard, faucet, price, positions)');
+// ── World Cup pick'em (off-chain game, auto-settled from TheSportsDB free API) ──
+const WC_API = 'https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4429&s=2026';
+const wcCache = {};
+async function fetchWcMatches() {
+  const d = await (await fetch(WC_API, { signal: AbortSignal.timeout(12000) })).json();
+  return (d.events || []).map((e) => {
+    const m = {
+      id: e.idEvent, name: e.strEvent, homeTeam: e.strHomeTeam || 'Home', awayTeam: e.strAwayTeam || 'Away',
+      date: (e.dateEvent || '') + (e.strTime ? ' ' + String(e.strTime).slice(0, 5) + ' UTC' : ''),
+      status: e.strStatus,
+      home: e.intHomeScore != null ? parseInt(e.intHomeScore, 10) : null,
+      away: e.intAwayScore != null ? parseInt(e.intAwayScore, 10) : null,
+    };
+    wcCache[m.id] = { name: m.name, home: m.homeTeam, away: m.awayTeam };
+    return m;
+  });
+}
+const pickLabel = (eid, pick) => { const c = wcCache[eid] || {}; return pick === 'HOME' ? (c.home || 'Home') : pick === 'AWAY' ? (c.away || 'Away') : 'Draw'; };
+async function doWorldCup(chatId, from) {
+  await ensureUser(from);
+  await send(chatId, '⚽ <i>Loading World Cup fixtures…</i>');
+  const up = (await fetchWcMatches()).filter((m) => m.status === 'NS').slice(0, 6);
+  if (!up.length) return send(chatId, '⚽ <b>No upcoming World Cup matches right now.</b> Check back soon.', homeKb());
+  await send(chatId, ['🏆 <b>World Cup pick’em</b>', 'Predict the result, correct picks earn <b>+3 points</b>, auto-settled when the match ends.', '', 'Pick below:'].join('\n'));
+  for (const m of up) {
+    await send(chatId, `<b>${esc(m.homeTeam)}</b> vs <b>${esc(m.awayTeam)}</b>\n<i>${esc(m.date)}</i>`, { inline_keyboard: [[
+      { text: '🏠 ' + m.homeTeam.slice(0, 11), callback_data: `wc:${m.id}:HOME` },
+      { text: '🤝 Draw', callback_data: `wc:${m.id}:DRAW` },
+      { text: m.awayTeam.slice(0, 11) + ' ✈', callback_data: `wc:${m.id}:AWAY` },
+    ]] });
+  }
+}
+async function doMyPicks(chatId, from) {
+  await ensureUser(from);
+  const picks = getUserPicks(from.id);
+  if (!picks.length) return send(chatId, '📋 <b>No World Cup picks yet.</b>\nTap ⚽ World Cup to predict.', homeKb());
+  const lines = picks.map((p) => `${p.settled ? (p.correct ? '✅ +3' : '❌  0') : '⏳ open'}  <b>${esc(p.eventName)}</b>, pick: ${esc(pickLabel(p.eventId, p.pick))}`);
+  await send(chatId, `📋 <b>Your World Cup picks</b>\n${lines.join('\n')}`, { inline_keyboard: [[{ text: '⚽ More matches', callback_data: 'do_wc' }, { text: '🏆 WC board', callback_data: 'do_wcb' }]] });
+}
+async function doWcBoard(chatId) {
+  const rows = wcLeaderboard(10);
+  const body = rows.length ? rows.map((r, i) => `${['🥇', '🥈', '🥉'][i] || `${i + 1}.`} @${esc(r.username || r.tgId)}  <b>${r.points} pts</b>  <i>(${r.picks})</i>`).join('\n') : 'No picks settled yet, be the first.';
+  await send(chatId, `🏆 <b>World Cup leaderboard</b>\n${body}`);
+}
+let wcRunning = false;
+async function settleWorldCup() {
+  if (wcRunning) return; wcRunning = true;
+  try {
+    for (const m of await fetchWcMatches()) {
+      if (m.status === 'FT' && m.home != null && m.away != null) {
+        const result = m.home > m.away ? 'HOME' : m.away > m.home ? 'AWAY' : 'DRAW';
+        const n = settleMatch(m.id, result);
+        if (n) console.log(`[wc] settled ${n} pick(s) on ${m.name} -> ${result}`);
+      }
+    }
+  } catch (e) { console.warn('[wc settle]', e?.message); } finally { wcRunning = false; }
+}
+bot.onText(/^\/worldcup/, (msg) => safe(msg.chat.id, () => doWorldCup(msg.chat.id, msg.from)));
+bot.onText(/^\/mypicks/, (msg) => safe(msg.chat.id, () => doMyPicks(msg.chat.id, msg.from)));
+bot.onText(/^\/wcboard/, (msg) => safe(msg.chat.id, () => doWcBoard(msg.chat.id)));
+setInterval(settleWorldCup, 20 * 60 * 1000);
+setTimeout(settleWorldCup, 8000);
+
+console.log('predict-tg-bot up (HTML wizard, faucet, price, positions, world cup pickem)');

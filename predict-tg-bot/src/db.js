@@ -44,6 +44,31 @@ try { db.exec(`ALTER TABLE users ADD COLUMN faucet_claimed INTEGER DEFAULT 0`); 
 export function hasFauceted(tgId) { return Boolean(db.prepare('SELECT faucet_claimed FROM users WHERE tg_id = ?').get(tgId)?.faucet_claimed); }
 export function markFauceted(tgId) { db.prepare('UPDATE users SET faucet_claimed = 1 WHERE tg_id = ?').run(tgId); }
 
+// ── World Cup pick'em (off-chain game, auto-settled from a football API) ──
+db.exec(`CREATE TABLE IF NOT EXISTS wc_picks (
+  tg_id INTEGER, event_id TEXT, event_name TEXT, pick TEXT,
+  settled INTEGER DEFAULT 0, correct INTEGER DEFAULT 0, created_at INTEGER,
+  PRIMARY KEY (tg_id, event_id)
+);`);
+export function savePick(tgId, eventId, eventName, pick) {
+  db.prepare(`INSERT INTO wc_picks (tg_id, event_id, event_name, pick, created_at) VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT(tg_id, event_id) DO UPDATE SET pick = excluded.pick WHERE settled = 0`).run(tgId, eventId, eventName, pick, Date.now());
+}
+export function getUserPicks(tgId) {
+  return db.prepare(`SELECT event_id AS eventId, event_name AS eventName, pick, settled, correct FROM wc_picks WHERE tg_id = ? ORDER BY created_at DESC LIMIT 20`).all(tgId);
+}
+// settle every unsettled pick on a finished match; returns rows changed
+export function settleMatch(eventId, result) {
+  return db.prepare(`UPDATE wc_picks SET settled = 1, correct = (pick = ?) WHERE event_id = ? AND settled = 0`).run(result, eventId).changes;
+}
+export function wcLeaderboard(n = 10) {
+  return db.prepare(`SELECT u.username, u.tg_id AS tgId,
+                       SUM(CASE WHEN p.settled = 1 AND p.correct = 1 THEN 3 ELSE 0 END) AS points,
+                       COUNT(p.event_id) AS picks
+                     FROM users u JOIN wc_picks p ON p.tg_id = u.tg_id
+                     GROUP BY u.tg_id HAVING picks > 0 ORDER BY points DESC LIMIT ?`).all(n);
+}
+
 export async function ensureUser(from) {
   const row = db.prepare('SELECT tg_id FROM users WHERE tg_id = ?').get(from.id);
   if (!row) {
