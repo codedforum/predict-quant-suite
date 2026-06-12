@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useModalDismiss } from '../lib/useModalDismiss';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? 'https://predict-api.smartcodedbot.com';
 
 export default function SettingsModal({ onClose }: { onClose: () => void }) {
+  useModalDismiss(onClose);
   const [density, setDensity] = useState<'normal' | 'compact'>(() => (typeof document !== 'undefined' && document.documentElement.dataset.density === 'compact') ? 'compact' : 'normal');
   const [webhook, setWebhook] = useState(() => { try { return localStorage.getItem('pqs-webhook') || ''; } catch { return ''; } });
   const [testStatus, setTestStatus] = useState<string | null>(null);

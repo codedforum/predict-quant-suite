@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SviSnapshot } from '../lib/predictApi';
 import { iv } from '../lib/sviMath';
+import { useModalDismiss } from '../lib/useModalDismiss';
 
 // Abramowitz-Stegun 26.2.17 normal CDF approximation
 function normCdf(x: number): number {
@@ -19,6 +20,7 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
   onSelect: (i: number) => void;
   onClose: () => void;
 }) {
+  useModalDismiss(onClose);
   const oracle = oracles[selectedIdx];
   const [strike, setStrike] = useState(() => oracle ? Math.round(oracle.forward / 1000) * 1000 : 80000);
   const [strikeUpper, setStrikeUpper] = useState(() => oracle ? Math.round(oracle.forward / 1000) * 1000 + 2000 : 82000);

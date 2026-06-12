@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { fetchOracleDrill, OracleDrill } from '../lib/predictApi';
+import { useModalDismiss } from '../lib/useModalDismiss';
 import Sparkline from './Sparkline';
 
 interface Props { oracleId: string; onClose: () => void }
 
 export default function OracleDrilldown({ oracleId, onClose }: Props) {
+  useModalDismiss(onClose);
   const [d, setD] = useState<OracleDrill | null>(null);
   const [loading, setLoading] = useState(true);
 

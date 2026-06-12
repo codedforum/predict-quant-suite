@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SviSnapshot } from '../lib/predictApi';
+import { useModalDismiss } from '../lib/useModalDismiss';
 
 interface Cmd { id: string; label: string; hint?: string; group: string; run: () => void }
 interface Props {
@@ -50,6 +51,7 @@ export default function CommandPalette(p: Props) {
   useEffect(() => { if (p.open) { setQ(''); setSel(0); setTimeout(() => inputRef.current?.focus(), 20); } }, [p.open]);
   useEffect(() => { setSel(0); }, [q]);
   useEffect(() => { activeRef.current?.scrollIntoView({ block: 'nearest' }); }, [sel]);
+  useModalDismiss(p.onClose, p.open);
 
   if (!p.open) return null;
 

@@ -1,4 +1,7 @@
+import { useModalDismiss } from '../lib/useModalDismiss';
+
 export default function AboutModal({ onClose }: { onClose: () => void }) {
+  useModalDismiss(onClose);
   return (
     <>
       <div className="scrim" onClick={onClose} />
