@@ -39,18 +39,18 @@ export default function StrikeGrid({ snapshot, baseSpreadBps = 200 }: Props) {
 
   return (
     <div className="strike-grid-wrap">
-      <div style={{ display: 'flex', gap: 10, padding: '12px 16px', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--t2)' }}>strike step</span>
+      <div className="strike-grid-head">
+        <span className="sgh-l">strike step</span>
         <div className="mode-toggle">
           {[1, 2, 4].map((s) => (
             <button key={s} className={stepPct === s ? 'active' : ''} onClick={() => setStepPct(s)}>{s}%</button>
           ))}
         </div>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--t3)', marginLeft: 'auto' }}>
+        <span className="sgh-r">
           forward ${snapshot.forward.toFixed(0)} · spread {baseSpreadBps} bps
         </span>
       </div>
-      <div style={{ overflowX: 'auto', maxHeight: 400 }}>
+      <div className="strike-grid-scroll">
         <table className="strike-table">
           <thead>
             <tr>

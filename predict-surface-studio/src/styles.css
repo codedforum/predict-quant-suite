@@ -1355,6 +1355,19 @@ a.cb-item:hover { text-decoration: underline; }
 /* polish: smooth hover on the options/Greeks strike table */
 .strike-table tbody tr { transition: background-color 0.14s ease; }
 .strike-table tbody tr:hover td { background: var(--glass); }
+.strike-grid-head { display: flex; gap: 10px; padding: 12px 16px; align-items: center; border-bottom: 1px solid var(--border); }
+.strike-grid-head .sgh-l { font-family: var(--mono); font-size: 11px; color: var(--t2); }
+.strike-grid-head .sgh-r { font-family: var(--mono); font-size: 11px; color: var(--t3); margin-left: auto; }
+.strike-grid-scroll { overflow-x: auto; max-height: clamp(240px, 60vh, 460px); }
+/* wallet-lookup address input (was inline-styled, no focus state) */
+.addr-input {
+  flex: 1; background: var(--bg); color: var(--t1);
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  padding: 10px 12px; font-family: var(--mono); font-size: 12px; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.addr-input::placeholder { color: var(--t3); }
+.addr-input:focus { border-color: var(--sui-blue); box-shadow: 0 0 0 3px var(--sui-blue-glow); }
 
 /* ============================================================
    SURFACE PAGE · immersive hero + metric bar

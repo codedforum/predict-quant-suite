@@ -38,12 +38,12 @@ export default function WalletLookupCard() {
     <div className="card-body" ref={ref} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', gap: 8 }}>
         <input
+          className="addr-input"
           type="text"
           placeholder="0x... Sui address"
           value={addr}
           onChange={(e) => setAddr(e.target.value.trim())}
           onKeyDown={(e) => e.key === 'Enter' && lookup()}
-          style={{ flex: 1, background: 'var(--bg)', color: 'var(--t1)', border: '1px solid var(--border-2)', borderRadius: 8, padding: '10px 12px', fontFamily: 'var(--mono)', fontSize: 12, outline: 'none' }}
         />
         <button className="btn btn-primary" onClick={() => lookup()} disabled={loading}>{loading ? '...' : 'Lookup'}</button>
       </div>
