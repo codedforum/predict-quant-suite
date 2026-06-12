@@ -190,7 +190,7 @@ export default function SurfaceViewer({ snapshot }: Props) {
           <button className={'sc-btn ' + (resolution === 'high' ? 'on' : '')} onClick={() => setResolution('high')} title="High resolution">H</button>
         </div>
         <div className="sc-group">
-          <button className="sc-btn" onClick={savePng} title="Download PNG">⬇</button>
+          <button className="sc-btn" onClick={savePng} title="Download PNG" aria-label="Download PNG">⬇</button>
         </div>
       </div>
 

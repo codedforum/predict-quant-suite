@@ -27,10 +27,10 @@ export default function OracleDrilldown({ oracleId, onClose }: Props) {
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div className="modal" style={{ maxWidth: 720 }}>
+      <div className="modal" style={{ maxWidth: 720 }} role="dialog" aria-modal="true" aria-label="Oracle drilldown">
         <div className="modal-head">
           <h2>Oracle Drilldown</h2>
-          <button className="icon-btn" onClick={onClose}>×</button>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="modal-body">
           <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--t2)', marginBottom: 16, wordBreak: 'break-all' }}>

@@ -39,10 +39,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div className="modal" style={{ maxWidth: 540 }}>
+      <div className="modal" style={{ maxWidth: 540 }} role="dialog" aria-modal="true" aria-label="Settings">
         <div className="modal-head">
           <h2>Settings</h2>
-          <button className="icon-btn" onClick={onClose}>×</button>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="modal-body">
           <h3>Density</h3>

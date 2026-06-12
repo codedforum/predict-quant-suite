@@ -5,10 +5,10 @@ export default function AboutModal({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div className="modal">
+      <div className="modal" role="dialog" aria-modal="true" aria-label="About Predict Surface Studio">
         <div className="modal-head">
           <h2>About Predict Surface Studio</h2>
-          <button className="icon-btn" onClick={onClose}>×</button>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="modal-body">
           <p>

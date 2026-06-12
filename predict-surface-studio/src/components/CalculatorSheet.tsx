@@ -82,11 +82,11 @@ export default function CalculatorSheet({ oracles, selectedIdx, onSelect, onClos
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <aside className="sheet">
+      <aside className="sheet" role="dialog" aria-modal="true" aria-label="Trade calculator">
         <div className="sheet-handle" />
         <div className="sheet-head">
           <h2>Trade Calculator</h2>
-          <button className="icon-btn" onClick={onClose}>×</button>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="sheet-body">
           <div className="field">
