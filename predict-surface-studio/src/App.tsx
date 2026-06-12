@@ -1,5 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
-import SurfaceViewer from './components/SurfaceViewer';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import CommandPalette from './components/CommandPalette';
 import OracleList from './components/OracleList';
 import SviParamsCard from './components/SviParamsCard';
@@ -40,6 +39,11 @@ import HeroSection from './components/HeroSection';
 import { TabsRow, BottomNav, TabKey, TABS } from './components/TabNav';
 import { fetchSurface, snapshotsFromSurface, fetchStats, SviSnapshot, SurfaceResponse, Stats } from './lib/predictApi';
 import { iv as sviIv } from './lib/sviMath';
+
+// The 3D surface pulls in three.js + react-three-fiber (~600kb). Lazy-load it so
+// it is a separate chunk fetched only when the 3D view actually renders, instead
+// of bloating the initial bundle for users on other tabs or the 2D heatmap.
+const SurfaceViewer = lazy(() => import('./components/SurfaceViewer'));
 
 // Live metric bar above the 3D surface — ATM IV, forward, expiry countdown, freshness.
 function SurfaceStatBar({ snap }: { snap?: SviSnapshot }) {
@@ -294,7 +298,7 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
           </div>
           <SurfaceStatBar snap={current} />
           <div className="card-body card-body-flex surface-stage" style={{ padding: 0, minHeight: 480 }}>
-            {current ? (surfaceMode === '3d' ? <SurfaceViewer snapshot={current} /> : <Heatmap2D snapshot={current} />) : skel}
+            {current ? (surfaceMode === '3d' ? <Suspense fallback={skel}><SurfaceViewer snapshot={current} /></Suspense> : <Heatmap2D snapshot={current} />) : skel}
           </div>
         </section>
 
