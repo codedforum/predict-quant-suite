@@ -1,0 +1,17 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b7fff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#beam)"/>
+  <!-- vol-smile glyph, centered in the maskable safe zone -->
+  <g transform="translate(256,256) scale(6) translate(-32,-32)">
+    <path d="M16 34 Q 32 50 48 34" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+    <path d="M14 24 Q 32 47 50 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="14" cy="24" r="3.6" fill="#ffffff"/>
+    <circle cx="32" cy="40" r="3.6" fill="#ffffff"/>
+    <circle cx="50" cy="24" r="3.6" fill="#ffffff"/>
+  </g>
+</svg>
