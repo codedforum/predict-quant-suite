@@ -20,11 +20,14 @@ Deadline: June 20 (hackathon runs May 7 to June 20). Save as draft now, finalize
 | **Demo Video** | (paste YouTube URL after recording — script below) |
 | **Team** | olawuwo nurudeen + poc |
 
-Live on-chain proof points to mention (all verifiable on Sui testnet) — the FULL trade lifecycle:
+Live on-chain proof points to mention (all verifiable on Sui testnet) — the FULL trade lifecycle for BOTH instruments:
 - create_manager: PredictManager `0xfd03ac6b53abec4d369c93a1697491c33751bc970823d768081fafbb53da3a5e`
-- mint: CALL on BTC oracle, strike $63,000 — tx `72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr` (cost 0.358 dUSDC)
+- mint BINARY: CALL on BTC oracle, strike $63,000 — tx `72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr` (cost 0.358 dUSDC)
 - redeem (early exit, sold back to the vault at bid): tx `DuKoWRSUvd2XyU2f73LmQeAJK6AQCw8De12vdCujtt8v` (payout 0.536 dUSDC → +0.18 realized P&L)
+- mint RANGE (structured product / spread, predict::mint_range): tx `FmtkQnmaHHG7Re7eLHcWctKkNgV4tcHxPGiwBKYNJViU` (bounded band, composes the Predict primitive into a spread)
 - Every leg priced live against the on-chain Gatheral SVI surface.
+
+**Composability (the DeepBook narrative):** the bot mints BOTH instruments Predict offers — binary directional positions (predict::mint) AND vertical-range structured products (predict::mint_range). A range pays out if BTC finishes between two strikes at expiry: a spread, one of the three composability vectors DeepBook explicitly calls out ("compose Predict positions for spreads and structured products"). Real, on-chain, verified.
 
 ---
 
@@ -38,7 +41,7 @@ It is two products that share one IV engine:
 
 **2. Vol-Arb bot** — a keeper that prices the Predict IV surface against a Deribit-primary cross-feed (with Polymarket fallback) every 15 seconds, surfaces arbitrage opportunities, and runs an optional Hyperliquid delta-hedge that computes per-position BSM delta and rebalances a perp when portfolio drift crosses a threshold. A backtest view replays the strategy over recorded spread history.
 
-The suite is not read-only marketing — it trades. The full mint path is live: create a PredictManager, deposit dUSDC, price a binary against the on-chain SVI surface, and mint a CALL/PUT position, all verified end-to-end on testnet (see the on-chain tx above). Redeem sweeps the payout back to the user's wallet.
+The suite is not read-only marketing — it trades, and the composability is real. It mints BOTH instruments Predict offers: binary directional positions (predict::mint) AND vertical-range structured products (predict::mint_range), a bounded "BTC finishes between two strikes" bet that composes the Predict primitive into a spread. The full path is live end to end on testnet: create a PredictManager, deposit dUSDC, price against the on-chain SVI surface, mint a binary or range position, redeem, payout sweeps to the wallet (see the on-chain txs above).
 
 **3. Telegram bot (@TheSmartPredictBot)** — the same trade path wrapped for non-crypto-native users. One tap to claim a real testnet faucet (dUSDC + gas from a dedicated sponsor wallet), tap up or down on BTC, and the bot mints a real on-chain position; redeem cashes out to the user's own self-custody Sui wallet (exportable to Slush anytime). It only offers strikes the contract will actually mint (quoted live), and deep-links each user straight to their own positions in the web terminal. The web terminal, the keeper API, and the bot all read one shared backend, so you analyze on the web and trade from Telegram against the exact same on-chain oracle.
 

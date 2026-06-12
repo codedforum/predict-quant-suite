@@ -76,9 +76,9 @@
 
 2. Vol-Arb bot, a keeper that prices the Predict IV surface against a Deribit-primary cross-feed (Polymarket fallback) every 15 seconds, surfaces arbitrage opportunities, and runs an optional Hyperliquid delta-hedge that computes per-position BSM delta and rebalances a perp when portfolio drift crosses a threshold. A backtest view replays the strategy over recorded spread history.
 
-3. Telegram bot (@TheSmartPredictBot), the same trade path wrapped for non-crypto-native users. One tap claims a real testnet faucet (dUSDC + gas from a dedicated sponsor wallet), tap up or down on BTC, and the bot mints a real on-chain position; redeem cashes out to the user's own self-custody Sui wallet, exportable to Slush anytime. It only offers strikes the contract will actually mint, quoted live, and deep-links each user straight to their own positions in the web terminal.
+3. Telegram bot (@TheSmartPredictBot), the same trade path wrapped for non-crypto-native users. One tap claims a real testnet faucet (dUSDC + gas from a dedicated sponsor wallet), tap up, down, or a range band, and the bot mints a real on-chain position; redeem cashes out to the user's own self-custody Sui wallet, exportable to Slush anytime. It only offers strikes and bands the contract will actually mint, quoted live, and deep-links each user straight to their own positions in the web terminal.
 
-The suite is not read-only marketing, it trades. The full mint path is live: create a PredictManager, deposit dUSDC, price a binary against the on-chain SVI surface, and mint a CALL/PUT position, all verified end-to-end on testnet. Redeem sweeps the payout back to the user's wallet. The web terminal, the keeper API and the bot all read one shared backend, so you analyze on the web and trade from Telegram against the exact same on-chain oracle.
+The suite is not read-only marketing, it trades, and the composability is real, not just claimed. It mints BOTH instruments Predict offers: binary directional positions (predict::mint) AND vertical-range structured products (predict::mint_range), a bounded bet that BTC finishes between two strikes, which composes the Predict primitive into a spread, one of the three composability vectors DeepBook calls out. The full path is live end to end on testnet: create a PredictManager, deposit dUSDC, price against the on-chain SVI surface, mint a binary or range position, redeem, and the payout sweeps back to the user's wallet. The web terminal, the keeper API and the bot all read one shared backend, so you analyze on the web and trade from Telegram against the exact same on-chain oracle.
 
 Why DeepBook Predict and not a Polymarket clone: a Predict position is composable (levered via deepbook_margin, exited via Spot in one PTB), settles sub-400ms for game-like UX, is seeded by an internal market maker so there is no cold-start liquidity gap, and is vol-surface-priced across every strike and expiry rather than hand-listed binaries.
 
@@ -136,8 +136,9 @@ Built for Sui Overflow 2026. Mainnet redeploy planned for Predict mainnet day-on
     <div class="sec-h"><span class="n">★</span> On-chain proof (mention in description / video)</div>
     <div class="sec-b">
       <div class="row"><div class="lbl">Manager</div><div class="val" id="p1">0xfd03ac6b53abec4d369c93a1697491c33751bc970823d768081fafbb53da3a5e</div><button class="copy" data-t="p1">Copy</button></div>
-      <div class="row"><div class="lbl">Mint tx</div><div class="val" id="p2">72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr</div><button class="copy" data-t="p2">Copy</button></div>
+      <div class="row"><div class="lbl">Mint tx (binary)</div><div class="val" id="p2">72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr</div><button class="copy" data-t="p2">Copy</button></div>
       <div class="row"><div class="lbl">Redeem tx</div><div class="val" id="p3">DuKoWRSUvd2XyU2f73LmQeAJK6AQCw8De12vdCujtt8v</div><button class="copy" data-t="p3">Copy</button></div>
+      <div class="row"><div class="lbl">Mint tx (range)</div><div class="val" id="p4">FmtkQnmaHHG7Re7eLHcWctKkNgV4tcHxPGiwBKYNJViU</div><button class="copy" data-t="p4">Copy</button></div>
       <div class="note">
         <a href="https://suiscan.xyz/testnet/tx/72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr" target="_blank" rel="noopener" style="color:var(--blue-l)">mint on Suiscan ↗</a> &nbsp;·&nbsp;
         <a href="https://suiscan.xyz/testnet/tx/DuKoWRSUvd2XyU2f73LmQeAJK6AQCw8De12vdCujtt8v" target="_blank" rel="noopener" style="color:var(--blue-l)">redeem on Suiscan ↗</a>
