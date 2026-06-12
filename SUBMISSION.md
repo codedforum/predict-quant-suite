@@ -15,6 +15,8 @@ Deadline: June 20 (hackathon runs May 7 to June 20). Save as draft now, finalize
 | **Contract Address** | `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` |
 | **Project Repo** | `https://github.com/codedforum/predict-quant-suite` |
 | **Website** | `https://predict.smartcodedbot.com` |
+| **Telegram Bot** | `https://t.me/TheSmartPredictBot` (live, real testnet faucet, self-custody wallets) |
+| **Keeper / API** | `https://predict-api.smartcodedbot.com` (live vol-arb ops dashboard + JSON API) |
 | **Demo Video** | (paste YouTube URL after recording — script below) |
 | **Team** | olawuwo nurudeen + poc |
 
@@ -36,7 +38,9 @@ It is two products that share one IV engine:
 
 **2. Vol-Arb bot** — a keeper that prices the Predict IV surface against a Deribit-primary cross-feed (with Polymarket fallback) every 15 seconds, surfaces arbitrage opportunities, and runs an optional Hyperliquid delta-hedge that computes per-position BSM delta and rebalances a perp when portfolio drift crosses a threshold. A backtest view replays the strategy over recorded spread history.
 
-The suite is not read-only marketing — it trades. The full mint path is live: create a PredictManager, deposit dUSDC, price a binary against the on-chain SVI surface, and mint a CALL/PUT position, all verified end-to-end on testnet (see the on-chain tx above). A companion Telegram quick-predict bot wraps the same path for non-crypto-native users with custodial per-user wallets.
+The suite is not read-only marketing — it trades. The full mint path is live: create a PredictManager, deposit dUSDC, price a binary against the on-chain SVI surface, and mint a CALL/PUT position, all verified end-to-end on testnet (see the on-chain tx above). Redeem sweeps the payout back to the user's wallet.
+
+**3. Telegram bot (@TheSmartPredictBot)** — the same trade path wrapped for non-crypto-native users. One tap to claim a real testnet faucet (dUSDC + gas from a dedicated sponsor wallet), tap up or down on BTC, and the bot mints a real on-chain position; redeem cashes out to the user's own self-custody Sui wallet (exportable to Slush anytime). It only offers strikes the contract will actually mint (quoted live), and deep-links each user straight to their own positions in the web terminal. The web terminal, the keeper API, and the bot all read one shared backend, so you analyze on the web and trade from Telegram against the exact same on-chain oracle.
 
 Why DeepBook Predict and not a Polymarket clone: a Predict position is composable (levered via deepbook_margin, exited via Spot in one PTB), settles sub-400ms for game-like UX, is seeded by an internal market maker so there is no cold-start liquidity gap, and is vol-surface-priced across every strike and expiry rather than hand-listed binaries. Surface Studio is the recruiting tool for sophisticated traders; the vol-arb bot is the mainnet-day-one strategy; the TG bot is the lowest-friction on-ramp.
 
@@ -57,15 +61,24 @@ Record at https://predict.smartcodedbot.com. Keyboard: `1`-`6` switch tabs, `C` 
 
 On-screen at 2:20: paste the Suiscan link https://suiscan.xyz/testnet/tx/72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr
 
+**Optional +20s — Telegram bot (if you want to show the on-ramp).** Open @TheSmartPredictBot in Telegram: "And for anyone not crypto-native, the same trade runs from Telegram. Tap to claim a real testnet faucet, tap up or down, and it mints a real on-chain position — self-custody wallet you fully own." Then cut back to the close.
+
 ---
 
 ## Submission checklist
-- [x] Frontend live (predict.smartcodedbot.com, co-branded + 6 security headers)
-- [x] API live (predict-api.smartcodedbot.com, 21 endpoints)
-- [x] Vol-arb bot + dashboard running (restarted clean 2026-06-11)
-- [x] On-chain end-to-end mint proven (manager + CALL position)
-- [x] Repo public + current (local fix de10cdb pending push confirm)
-- [ ] DeepSurge form saved as draft (paste fields above)
-- [ ] Demo video recorded + YouTube URL pasted
-- [ ] TG bot deployed (BLOCKED: needs a fresh BotFather token)
-- [ ] Form finalized / submitted before June 20
+- [x] Frontend live (predict.smartcodedbot.com) — code-split (266KB initial JS), 1yr asset cache, full a11y, social preview, PWA installable
+- [x] API live (predict-api.smartcodedbot.com, 22 endpoints) + rebranded vol-arb keeper ops dashboard
+- [x] Vol-arb bot + dashboard running (online, stable)
+- [x] On-chain end-to-end mint + redeem proven (manager + CALL, payout swept to wallet)
+- [x] Telegram bot LIVE — @TheSmartPredictBot (real faucet, mint, redeem-to-wallet, /export, web deep-links)
+- [x] Repo public + current (all pushed to codedforum/predict-quant-suite)
+- [x] Security audit clean (SSRF fixed, input hardened, no secrets, headers set — verified 2026-06-12)
+- [ ] DeepSurge form saved as draft (paste fields above) — YOU
+- [ ] Demo video recorded + YouTube URL pasted — YOU (script below; I cannot record)
+- [ ] Form finalized / submitted before June 20 — YOU
+
+## What's left for you (everything else is done)
+1. **Record the ~2:30 demo video** at predict.smartcodedbot.com using the script below, upload to YouTube (unlisted is fine), paste the URL.
+2. **Paste the form fields** (table at top) into the DeepSurge form and save as draft.
+3. **Top up the faucet wallet's SUI** at faucet.sui.io if bot claims start failing (low gas).
+4. **Submit** before June 20.
