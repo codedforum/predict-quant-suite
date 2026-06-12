@@ -1,0 +1,53 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b7fff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <radialGradient id="glowTop" cx="50%" cy="0%" r="70%">
+      <stop offset="0" stop-color="#4da2ff" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#4da2ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowBot" cx="92%" cy="108%" r="55%">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="headline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#cfe4ff"/>
+      <stop offset="1" stop-color="#8ac4ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#040508"/>
+  <rect width="1200" height="630" fill="url(#glowTop)"/>
+  <rect width="1200" height="630" fill="url(#glowBot)"/>
+  <rect x="0" y="0" width="1200" height="4" fill="url(#beam)"/>
+
+  <!-- brand row -->
+  <g transform="translate(80, 84)">
+    <rect width="64" height="64" rx="16" fill="url(#beam)"/>
+    <path d="M16 34 Q 32 50 48 34" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.38"/>
+    <path d="M14 24 Q 32 47 50 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="14" cy="24" r="3.6" fill="#fff"/><circle cx="32" cy="40" r="3.6" fill="#fff"/><circle cx="50" cy="24" r="3.6" fill="#fff"/>
+    <text x="84" y="28" font-family="'Sora','Segoe UI',sans-serif" font-size="26" font-weight="800" fill="#f4f6fa" letter-spacing="-0.5">Predict Quant Suite</text>
+    <text x="84" y="54" font-family="'JetBrains Mono',monospace" font-size="16" fill="#9aa4b4">by SmartCodedBot · DeepBook × Sui</text>
+  </g>
+
+  <!-- headline -->
+  <text x="80" y="312" font-family="'Sora','Segoe UI',sans-serif" font-size="66" font-weight="800" fill="url(#headline)" letter-spacing="-2">The on-chain options</text>
+  <text x="80" y="388" font-family="'Sora','Segoe UI',sans-serif" font-size="66" font-weight="800" fill="url(#headline)" letter-spacing="-2">terminal for DeepBook Predict</text>
+
+  <!-- sub -->
+  <text x="80" y="450" font-family="'Inter','Segoe UI',sans-serif" font-size="25" fill="#9aa4b4">3D volatility surface  ·  vol-arb keeper  ·  real on-chain trades</text>
+
+  <!-- footer chips -->
+  <g transform="translate(80, 512)" font-family="'JetBrains Mono',monospace" font-size="17">
+    <rect x="0" y="0" width="190" height="38" rx="10" fill="#0d0f15" stroke="#1c2330"/>
+    <text x="20" y="25" fill="#8ac4ff">Sui testnet · live</text>
+    <rect x="206" y="0" width="232" height="38" rx="10" fill="#0d0f15" stroke="#1c2330"/>
+    <text x="226" y="25" fill="#9aa4b4">predict.smartcodedbot.com</text>
+    <rect x="454" y="0" width="232" height="38" rx="10" fill="#0d0f15" stroke="#1c2330"/>
+    <text x="474" y="25" fill="#9aa4b4">Sui Overflow 2026</text>
+  </g>
+</svg>
