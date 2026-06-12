@@ -174,6 +174,7 @@ export default function App() {
 
   return (
     <div className="app page-in">
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <nav className="nav">
         <a className="brand" href="/">
           <div className="mark">σ</div>
@@ -206,7 +207,7 @@ export default function App() {
 
       {tab === 'surface' && <HeroSection surface={surface} oracles={oracles} current={current} stats={stats} />}
 
-      <main className="main">
+      <main className="main" id="main-content">
         <TabPanel
           key={tab}
           tab={tab}

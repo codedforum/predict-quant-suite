@@ -96,6 +96,16 @@ button, input, select { font-family: inherit; }
 
 :focus-visible { outline: 2px solid var(--sui-blue); outline-offset: 2px; border-radius: 4px; }
 
+/* keyboard skip-to-content: off-screen until focused, then pinned top-left */
+.skip-link {
+  position: fixed; top: -60px; left: 12px; z-index: 200;
+  padding: 10px 16px; border-radius: 0 0 10px 10px;
+  background: var(--beam); color: #fff; font-family: var(--sg); font-weight: 700; font-size: 13px;
+  text-decoration: none; box-shadow: 0 8px 24px var(--sui-blue-glow);
+  transition: top 0.18s ease;
+}
+.skip-link:focus { top: 0; }
+
 /* ============ Background scenery · quiet observatory ============ */
 /* dot-matrix field replacing the line grid */
 .bg-grid {
