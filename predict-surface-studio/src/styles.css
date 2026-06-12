@@ -387,6 +387,38 @@ h1, h2, h3, h4 { font-family: var(--sg); margin: 0; font-weight: 700; letter-spa
 .live-card .sub { font-family: var(--mono); font-size: 11px; color: var(--t2); margin-top: 4px; }
 
 /* ============ Tabs · desktop dock ============ */
+/* settlement-imminent alert banner (component had no CSS) */
+.settle-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 9px 16px;
+  font-family: var(--mono); font-size: 12px; color: var(--t2);
+  background: linear-gradient(90deg, rgba(255,194,77,0.13), rgba(255,194,77,0.03));
+  border-bottom: 1px solid rgba(255,194,77,0.30);
+}
+.settle-banner.critical {
+  background: linear-gradient(90deg, rgba(255,92,122,0.15), rgba(255,92,122,0.03));
+  border-bottom-color: rgba(255,92,122,0.36);
+}
+.sb-pulse {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--yellow); animation: sbPulse 1.6s infinite;
+}
+.settle-banner.critical .sb-pulse { background: var(--red); animation-duration: 1s; }
+@keyframes sbPulse {
+  0% { box-shadow: 0 0 0 0 rgba(255,194,77,0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(255,194,77,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,194,77,0); }
+}
+.sb-label {
+  font-weight: 700; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--yellow);
+}
+.settle-banner.critical .sb-label { color: var(--red); }
+.sb-text { color: var(--t2); }
+.sb-text code { color: var(--sui-blue-light); font-size: 11px; }
+.sb-time { color: var(--t1); font-weight: 700; font-variant-numeric: tabular-nums; }
+.sb-more { margin-left: auto; color: var(--t3); font-size: 11px; }
+
 .tabs-wrap {
   position: sticky; top: var(--nav-h); z-index: 20;
   background: linear-gradient(180deg, rgba(4,5,8,0.86), rgba(4,5,8,0.62));
@@ -1126,6 +1158,7 @@ a.cb-item:hover { text-decoration: underline; }
   background: linear-gradient(135deg, var(--orange), var(--yellow));
   box-shadow: 0 6px 18px rgba(249,115,22,0.35), inset 0 1px 0 rgba(255,255,255,0.35);
 }
+.lb-hero-body { flex: 1; min-width: 0; }
 .lb-hero-mgr { font-family: var(--mono); font-size: 13px; color: var(--t1); margin-bottom: 6px; }
 .lb-hero-stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--t2); }
 .lb-hero-stats .num { color: var(--t1); }
@@ -1368,6 +1401,25 @@ a.cb-item:hover { text-decoration: underline; }
 }
 .addr-input::placeholder { color: var(--t3); }
 .addr-input:focus { border-color: var(--sui-blue); box-shadow: 0 0 0 3px var(--sui-blue-glow); }
+
+/* hour-of-day activity heatmap (component had no CSS) */
+.hour-heatmap { display: flex; flex-direction: column; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+.hh-cols, .hh-row { display: grid; grid-template-columns: 38px repeat(24, 1fr); gap: 3px; align-items: center; min-width: 520px; }
+.hh-corner { height: 14px; }
+.hh-h-label { font-family: var(--mono); font-size: 8.5px; color: var(--t3); text-align: center; white-space: nowrap; }
+.hh-d-label { font-family: var(--mono); font-size: 10px; color: var(--t3); }
+.hh-cell { height: 16px; border-radius: 3px; transition: transform 0.1s ease; cursor: default; }
+.hh-cell:hover { transform: scale(1.2); outline: 1px solid var(--sui-blue-light); position: relative; z-index: 2; }
+
+/* 24h strike-flow bars: CALL volume left, PUT volume right (component had no CSS) */
+.flow-bars { display: flex; flex-direction: column; gap: 5px; }
+.flow-row { display: grid; grid-template-columns: 1fr 64px 1fr; align-items: center; gap: 8px; }
+.flow-side { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.flow-cnt { font-family: var(--mono); font-size: 10px; color: var(--t3); white-space: nowrap; }
+.flow-bar { height: 14px; border-radius: 4px; min-width: 2px; transition: width 0.4s ease; }
+.flow-bar.call { background: linear-gradient(90deg, rgba(77,162,255,0.35), var(--sui-blue)); }
+.flow-bar.put { background: linear-gradient(90deg, var(--orange-soft), rgba(251,146,60,0.35)); }
+.flow-strike { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--t1); text-align: center; font-variant-numeric: tabular-nums; }
 
 /* ============================================================
    SURFACE PAGE · immersive hero + metric bar
