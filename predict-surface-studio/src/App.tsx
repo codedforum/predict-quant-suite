@@ -19,6 +19,7 @@ import Heatmap2D from './components/Heatmap2D';
 import OracleDrilldown from './components/OracleDrilldown';
 import LeaderboardCard from './components/LeaderboardCard';
 import StrikeGrid from './components/StrikeGrid';
+import RangeGrid from './components/RangeGrid';
 import BacktestChart from './components/BacktestChart';
 import WalletLookupCard from './components/WalletLookupCard';
 import CompareOraclesPanel from './components/CompareOraclesPanel';
@@ -541,12 +542,18 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
             </div>
           </section>
           <section className="card">
-            <div className="card-head"><div className="ch-title"><h2>BSM strike chain</h2></div><span className="meta">approximated</span></div>
+            <div className="card-head"><div className="ch-title"><h2>BSM strike chain</h2></div><span className="meta">binary · approximated</span></div>
             <div className="card-body card-body-flex" style={{ padding: 0 }}>
               {current ? <StrikeGrid snapshot={current} /> : skel}
             </div>
           </section>
         </div>
+        <section className="card glow">
+          <div className="card-head"><div className="ch-title"><h2>Range markets</h2><span className="hero-tag">structured products · bounded bets</span></div><span className="meta">predict::mint_range · priced from the SVI surface</span></div>
+          <div className="card-body card-body-flex" style={{ padding: 0 }}>
+            {current ? <RangeGrid snapshot={current} /> : skel}
+          </div>
+        </section>
         <section className="card glow">
           <div className="card-head"><div className="ch-title"><h2>24h trade flow per strike</h2><span className="hero-tag">volume distribution</span></div></div>
           {current ? <StrikeFlowHeatmap oracle={current} /> : skel}
