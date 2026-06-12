@@ -13,61 +13,64 @@
 <style>
   :root{--bg:#040508;--card:#0d0f15;--card2:#12151d;--t1:#f4f6fa;--t2:#9aa4b4;--t3:#5c6474;
     --border:rgba(255,255,255,.08);--border2:rgba(77,162,255,.38);--blue:#4da2ff;--blue-l:#8ac4ff;
-    --green:#2ee6a8;--glow:rgba(77,162,255,.3);--beam:linear-gradient(120deg,#2b7fff,#4da2ff 48%,#22d3ee);
+    --green:#2ee6a8;--yellow:#ffc24d;--glow:rgba(77,162,255,.3);--beam:linear-gradient(120deg,#2b7fff,#4da2ff 48%,#22d3ee);
     --sg:'Sora',system-ui,sans-serif;--inter:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--t1);font-family:var(--inter);-webkit-font-smoothing:antialiased;min-height:100vh}
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     background:radial-gradient(ellipse 70% 45% at 50% -10%,rgba(77,162,255,.14),transparent 60%)}
-  .wrap{position:relative;z-index:1;max-width:920px;margin:0 auto;padding:34px 18px 80px}
+  .wrap{position:relative;z-index:1;max-width:940px;margin:0 auto;padding:34px 18px 90px}
   .brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
   .brand img{width:42px;height:42px;border-radius:12px;box-shadow:0 6px 20px var(--glow)}
   h1{font-family:var(--sg);font-size:25px;font-weight:800;margin:0;letter-spacing:-.02em}
   .sub{font-family:var(--mono);font-size:12px;color:var(--t2);margin:3px 0 0}
-  .lead{color:var(--t2);font-size:14px;line-height:1.6;margin:18px 0 26px}
+  .lead{color:var(--t2);font-size:14px;line-height:1.6;margin:18px 0 8px}
   .lead a{color:var(--blue-l);text-decoration:none}
-  h2{font-family:var(--sg);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin:30px 0 12px}
-  .row{display:flex;align-items:stretch;gap:10px;margin-bottom:10px}
-  .row .lbl{flex:0 0 132px;font-family:var(--mono);font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center}
-  .val{flex:1;min-width:0;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 14px;
+  .sec{margin-top:30px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(180deg,rgba(77,162,255,.04),transparent 40%),var(--card);overflow:hidden}
+  .sec-h{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--border);font-family:var(--sg);font-weight:800;font-size:15px}
+  .sec-h .n{width:24px;height:24px;border-radius:7px;background:var(--beam);color:#fff;display:grid;place-items:center;font-size:13px;flex:0 0 auto}
+  .sec-b{padding:14px 18px}
+  .row{display:flex;align-items:stretch;gap:10px;margin-bottom:11px}
+  .row:last-child{margin-bottom:0}
+  .row .lbl{flex:0 0 128px;font-family:var(--mono);font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;line-height:1.3}
+  .req{color:var(--yellow)}
+  .val{flex:1;min-width:0;background:#06070b;border:1px solid var(--border);border-radius:10px;padding:11px 13px;
     font-family:var(--mono);font-size:13px;color:var(--t1);overflow:auto;white-space:nowrap;display:flex;align-items:center}
-  .block{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:16px 18px;font-size:13.5px;line-height:1.65;color:var(--t1);white-space:pre-wrap}
+  .block{background:#06070b;border:1px solid var(--border);border-radius:12px;padding:15px 17px;font-size:13px;line-height:1.62;color:var(--t1);white-space:pre-wrap}
   .copy{flex:0 0 auto;border:1px solid var(--border2);background:var(--card2);color:var(--blue-l);font-family:var(--sg);font-weight:700;
-    font-size:12px;border-radius:10px;padding:0 15px;cursor:pointer;white-space:nowrap;transition:all .15s}
+    font-size:12px;border-radius:9px;padding:0 15px;cursor:pointer;white-space:nowrap;transition:all .15s}
   .copy:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
   .copy.done{background:var(--green);border-color:var(--green);color:#04130d}
   .blockwrap{position:relative}
-  .blockwrap .copy{position:absolute;top:12px;right:12px;height:32px;z-index:2}
-  .links{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-  .chip{font-family:var(--mono);font-size:12px;color:var(--blue-l);text-decoration:none;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px}
-  .chip:hover{border-color:var(--border2)}
-  .note{font-family:var(--mono);font-size:11.5px;color:var(--t3);margin-top:8px;line-height:1.6}
+  .blockwrap .copy{position:absolute;top:11px;right:11px;height:31px;z-index:2}
+  .pick{flex:1;background:rgba(255,194,77,.07);border:1px dashed rgba(255,194,77,.4);border-radius:10px;padding:10px 13px;font-size:12.5px;color:var(--t1);line-height:1.5}
+  .pick b{color:var(--yellow)}
+  .dl{display:inline-flex;align-items:center;gap:8px;text-decoration:none;border:1px solid var(--border2);background:var(--card2);color:var(--blue-l);
+    font-family:var(--sg);font-weight:700;font-size:12.5px;border-radius:10px;padding:9px 14px;margin:0 8px 8px 0}
+  .dl:hover{background:var(--blue);color:#fff}
+  .dl img{width:34px;height:34px;border-radius:7px;border:1px solid var(--border)}
+  .note{font-family:var(--mono);font-size:11.5px;color:var(--t3);margin-top:9px;line-height:1.6}
+  .note b{color:var(--t2)}
+  .ok{color:var(--green)}
   footer{margin-top:40px;font-family:var(--mono);font-size:11px;color:var(--t3);text-align:center}
-  @media(max-width:600px){.row{flex-wrap:wrap}.row .lbl{flex-basis:100%}.copy{padding:9px 14px}}
+  @media(max-width:620px){.row{flex-wrap:wrap}.row .lbl{flex-basis:100%}.copy{padding:9px 14px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="brand">
     <img src="/mark.svg" alt="" />
-    <div><h1>Submission helper</h1><div class="sub">Predict Quant Suite · DeepSurge · Sui Overflow 2026</div></div>
+    <div><h1>DeepSurge submission helper</h1><div class="sub">Predict Quant Suite · Sui Overflow 2026 · fields match the form</div></div>
   </div>
-  <p class="lead">Tap <b>Copy</b> on any field, then paste it into the <a href="https://www.deepsurge.xyz/hackathons/b587dc0c-4cb8-4e63-ada5-519df38103bf" target="_blank" rel="noopener">DeepSurge form</a>. Deadline June 20.</p>
+  <p class="lead">Open the <a href="https://www.deepsurge.xyz/hackathons/b587dc0c-4cb8-4e63-ada5-519df38103bf" target="_blank" rel="noopener">DeepSurge form</a>, then work down these sections. Tap <b>Copy</b> and paste into the matching field.</p>
 
-  <h2>Form fields</h2>
-  <div class="row"><div class="lbl">Project name</div><div class="val" id="f1">Predict Quant Suite</div><button class="copy" data-t="f1">Copy</button></div>
-  <div class="row"><div class="lbl">Track</div><div class="val" id="f2">Special - DeepBook</div><button class="copy" data-t="f2">Copy</button></div>
-  <div class="row"><div class="lbl">Network</div><div class="val" id="f3">Sui Testnet</div><button class="copy" data-t="f3">Copy</button></div>
-  <div class="row"><div class="lbl">Contract</div><div class="val" id="f4">0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138</div><button class="copy" data-t="f4">Copy</button></div>
-  <div class="row"><div class="lbl">Repo</div><div class="val" id="f5">https://github.com/codedforum/predict-quant-suite</div><button class="copy" data-t="f5">Copy</button></div>
-  <div class="row"><div class="lbl">Website</div><div class="val" id="f6">https://predict.smartcodedbot.com</div><button class="copy" data-t="f6">Copy</button></div>
-  <div class="row"><div class="lbl">Telegram bot</div><div class="val" id="f7">https://t.me/TheSmartPredictBot</div><button class="copy" data-t="f7">Copy</button></div>
-  <div class="row"><div class="lbl">Keeper / API</div><div class="val" id="f8">https://predict-api.smartcodedbot.com</div><button class="copy" data-t="f8">Copy</button></div>
+  <!-- BASIC INFORMATION -->
+  <div class="sec">
+    <div class="sec-h"><span class="n">1</span> Basic Information</div>
+    <div class="sec-b">
+      <div class="row"><div class="lbl">Project Name</div><div class="val" id="f1">Predict Quant Suite</div><button class="copy" data-t="f1">Copy</button></div>
 
-  <h2>Description</h2>
-  <div class="blockwrap">
-    <button class="copy" data-t="desc">Copy</button>
-    <div class="block" id="desc">Predict Quant Suite is a professional analytics + trading stack built on DeepBook Predict, Sui's expiry-based, oracle-priced options/prediction primitive. It is three products that share one IV engine.
+      <div class="row"><div class="lbl">Description</div><div class="blockwrap" style="flex:1"><button class="copy" data-t="desc">Copy</button><div class="block" id="desc">Predict Quant Suite is a professional analytics + trading stack built on DeepBook Predict, Sui's expiry-based, oracle-priced options/prediction primitive. It is three products that share one IV engine.
 
 1. Surface Studio, a 3D volatility-surface viewer for every live Predict oracle. Toggle IV, delta, vega and gamma surfaces; cross-section the smile; read the implied-probability histogram; compare oracles side by side; track the ATM and 25-delta wing term structure against a realized-vs-implied volatility cone. The Markets tab renders the live on-chain orderbook with a BSM fair-value edge column (17 strikes priced in a single batched devInspect PTB), and the Activity tab streams real on-chain events with a contributor leaderboard and a day-of-week x hour heatmap. Everything is computed from live Gatheral SVI parameters pulled straight from chain, with a transparent chain-direct fallback when the public indexer 404s.
 
@@ -77,40 +80,79 @@
 
 The suite is not read-only marketing, it trades. The full mint path is live: create a PredictManager, deposit dUSDC, price a binary against the on-chain SVI surface, and mint a CALL/PUT position, all verified end-to-end on testnet. Redeem sweeps the payout back to the user's wallet. The web terminal, the keeper API and the bot all read one shared backend, so you analyze on the web and trade from Telegram against the exact same on-chain oracle.
 
-Why DeepBook Predict and not a Polymarket clone: a Predict position is composable (levered via deepbook_margin, exited via Spot in one PTB), settles sub-400ms for game-like UX, is seeded by an internal market maker so there is no cold-start liquidity gap, and is vol-surface-priced across every strike and expiry rather than hand-listed binaries. Surface Studio is the recruiting tool for sophisticated traders; the vol-arb bot is the mainnet-day-one strategy; the Telegram bot is the lowest-friction on-ramp.
+Why DeepBook Predict and not a Polymarket clone: a Predict position is composable (levered via deepbook_margin, exited via Spot in one PTB), settles sub-400ms for game-like UX, is seeded by an internal market maker so there is no cold-start liquidity gap, and is vol-surface-priced across every strike and expiry rather than hand-listed binaries.
 
-Built for Sui Overflow 2026. Mainnet redeploy planned for Predict mainnet day-one.</div>
+Built for Sui Overflow 2026. Mainnet redeploy planned for Predict mainnet day-one.</div></div></div>
+
+      <div class="row"><div class="lbl">Track</div><div class="pick">In the dropdown choose the <b>DeepBook</b> track if it is listed (this is a DeepBook Predict build). If there is no DeepBook option, choose <b>Core Track</b>.</div></div>
+
+      <div class="row"><div class="lbl">Deployment network</div><div class="pick">Select <b>Sui</b> / <b>Sui Testnet</b> in the network dropdown.</div></div>
+
+      <div class="row"><div class="lbl">Contract (0x...)</div><div class="val" id="f2">0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138</div><button class="copy" data-t="f2">Copy</button></div>
+
+      <div class="row"><div class="lbl">Logo upload</div><div style="flex:1">
+        <a class="dl" href="/icon-512.png" download><img src="/icon-512.png" alt="" />Download logo (512px)</a>
+        <a class="dl" href="/og.png" download><img src="/og.png" alt="" style="width:60px" />Download banner (1200x630)</a>
+        <div class="note">Use the 512px square as the project logo, and the 1200x630 banner in the Media section.</div>
+      </div></div>
+
+      <div class="row"><div class="lbl">Public page</div><div class="pick">Leave <b>"appear on the public projects page"</b> checked.</div></div>
+    </div>
   </div>
 
-  <h2>On-chain proof (mention these)</h2>
-  <div class="row"><div class="lbl">Manager</div><div class="val" id="p1">0xfd03ac6b53abec4d369c93a1697491c33751bc970823d768081fafbb53da3a5e</div><button class="copy" data-t="p1">Copy</button></div>
-  <div class="row"><div class="lbl">Mint tx</div><div class="val" id="p2">72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr</div><button class="copy" data-t="p2">Copy</button></div>
-  <div class="row"><div class="lbl">Redeem tx</div><div class="val" id="p3">DuKoWRSUvd2XyU2f73LmQeAJK6AQCw8De12vdCujtt8v</div><button class="copy" data-t="p3">Copy</button></div>
-  <div class="links">
-    <a class="chip" href="https://suiscan.xyz/testnet/tx/72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr" target="_blank" rel="noopener">mint on Suiscan ↗</a>
-    <a class="chip" href="https://suiscan.xyz/testnet/tx/DuKoWRSUvd2XyU2f73LmQeAJK6AQCw8De12vdCujtt8v" target="_blank" rel="noopener">redeem on Suiscan ↗</a>
+  <!-- TEAM -->
+  <div class="sec">
+    <div class="sec-h"><span class="n">2</span> Team</div>
+    <div class="sec-b">
+      <div class="note ok">Already added: olawuwo nurudeen, and poc @smartcoded. Nothing to copy here, just confirm both are present.</div>
+    </div>
   </div>
 
-  <h2>Live surfaces</h2>
-  <div class="links">
-    <a class="chip" href="https://predict.smartcodedbot.com" target="_blank" rel="noopener">Web terminal ↗</a>
-    <a class="chip" href="https://predict-api.smartcodedbot.com" target="_blank" rel="noopener">Keeper dashboard ↗</a>
-    <a class="chip" href="https://t.me/TheSmartPredictBot" target="_blank" rel="noopener">Telegram bot ↗</a>
-    <a class="chip" href="https://github.com/codedforum/predict-quant-suite" target="_blank" rel="noopener">GitHub ↗</a>
+  <!-- LINKS -->
+  <div class="sec">
+    <div class="sec-h"><span class="n">3</span> Links</div>
+    <div class="sec-b">
+      <div class="row"><div class="lbl">Project Repo <span class="req">*</span></div><div class="val" id="f3">https://github.com/codedforum/predict-quant-suite</div><button class="copy" data-t="f3">Copy</button></div>
+      <div class="row"><div class="lbl">Website</div><div class="val" id="f4">https://predict.smartcodedbot.com</div><button class="copy" data-t="f4">Copy</button></div>
+      <div class="row"><div class="lbl">Demo Video <span class="req">*</span></div><div class="pick">Paste your <b>YouTube URL</b> here after you record (the ~2:30 script is in SUBMISSION.md in the repo). This field is required to submit.</div></div>
+      <div class="note"><b>Add Link</b> (use the + to add these two extra links):</div>
+      <div class="row"><div class="lbl">+ Telegram bot</div><div class="val" id="f5">https://t.me/TheSmartPredictBot</div><button class="copy" data-t="f5">Copy</button></div>
+      <div class="row"><div class="lbl">+ Keeper / API</div><div class="val" id="f6">https://predict-api.smartcodedbot.com</div><button class="copy" data-t="f6">Copy</button></div>
+    </div>
   </div>
 
-  <h2>Still on you</h2>
-  <p class="note">1. Record the ~2:30 demo video at predict.smartcodedbot.com (script is in SUBMISSION.md in the repo), upload to YouTube, paste the URL.<br/>2. Top up the faucet wallet's SUI at faucet.sui.io if bot claims start failing.<br/>3. Submit before June 20.</p>
+  <!-- MEDIA -->
+  <div class="sec">
+    <div class="sec-h"><span class="n">4</span> Media</div>
+    <div class="sec-b">
+      <a class="dl" href="/og.png" download><img src="/og.png" alt="" style="width:60px" />Download banner (1200x630)</a>
+      <a class="dl" href="/icon-512.png" download><img src="/icon-512.png" alt="" />Download mark (512px)</a>
+      <div class="note">Upload the banner as the main project image. For extra screenshots, open <a href="https://predict.smartcodedbot.com" target="_blank" rel="noopener" style="color:var(--blue-l)">the live terminal</a> and screenshot the Surface, Vol-Arb, and Markets tabs.</div>
+    </div>
+  </div>
 
-  <footer>Predict Quant Suite · built for Sui Overflow 2026 by SmartCodedBot</footer>
+  <!-- PROOF -->
+  <div class="sec">
+    <div class="sec-h"><span class="n">★</span> On-chain proof (mention in description / video)</div>
+    <div class="sec-b">
+      <div class="row"><div class="lbl">Manager</div><div class="val" id="p1">0xfd03ac6b53abec4d369c93a1697491c33751bc970823d768081fafbb53da3a5e</div><button class="copy" data-t="p1">Copy</button></div>
+      <div class="row"><div class="lbl">Mint tx</div><div class="val" id="p2">72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr</div><button class="copy" data-t="p2">Copy</button></div>
+      <div class="row"><div class="lbl">Redeem tx</div><div class="val" id="p3">DuKoWRSUvd2XyU2f73LmQeAJK6AQCw8De12vdCujtt8v</div><button class="copy" data-t="p3">Copy</button></div>
+      <div class="note">
+        <a href="https://suiscan.xyz/testnet/tx/72fCQQxEgMsvFx5s78NLajCQYKM5aTeBWEQtozZGT3hr" target="_blank" rel="noopener" style="color:var(--blue-l)">mint on Suiscan ↗</a> &nbsp;·&nbsp;
+        <a href="https://suiscan.xyz/testnet/tx/DuKoWRSUvd2XyU2f73LmQeAJK6AQCw8De12vdCujtt8v" target="_blank" rel="noopener" style="color:var(--blue-l)">redeem on Suiscan ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>Predict Quant Suite · built for Sui Overflow 2026 by SmartCodedBot · still on you: record the video, then Submit Project before June 20</footer>
 </div>
 
 <script>
   document.querySelectorAll('.copy').forEach(function(btn){
     btn.addEventListener('click', function(){
       var el = document.getElementById(btn.getAttribute('data-t'));
-      var text = el.innerText;
-      navigator.clipboard.writeText(text).then(function(){
+      navigator.clipboard.writeText(el.innerText).then(function(){
         var old = btn.textContent;
         btn.textContent = 'Copied';
         btn.classList.add('done');
