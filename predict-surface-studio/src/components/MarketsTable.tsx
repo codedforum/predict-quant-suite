@@ -28,8 +28,16 @@ export default function MarketsTable({ oracles, selectedIdx, onSelect }: { oracl
     return decorated;
   }, [oracles, sort, asc]);
 
+  const toggle = (key: SortKey) => { sort === key ? setAsc(!asc) : (setSort(key), setAsc(true)); };
   const head = (key: SortKey, label: string) => (
-    <th onClick={() => { sort === key ? setAsc(!asc) : (setSort(key), setAsc(true)); }} style={{ cursor: 'pointer' }}>
+    <th
+      className={'sortable' + (sort === key ? ' sorted' : '')}
+      tabIndex={0}
+      role="button"
+      aria-sort={sort === key ? (asc ? 'ascending' : 'descending') : 'none'}
+      onClick={() => toggle(key)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(key); } }}
+    >
       {label}{sort === key ? (asc ? ' ↑' : ' ↓') : ''}
     </th>
   );
