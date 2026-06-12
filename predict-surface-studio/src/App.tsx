@@ -4,7 +4,6 @@ import CommandPalette from './components/CommandPalette';
 import OracleList from './components/OracleList';
 import SviParamsCard from './components/SviParamsCard';
 import ArbStatus from './components/ArbStatus';
-import SmilePlot from './components/SmilePlot';
 import MultiSmilePlot from './components/MultiSmilePlot';
 import TermStructurePlot from './components/TermStructurePlot';
 import ActivityFeed from './components/ActivityFeed';

@@ -1527,8 +1527,22 @@ a.cb-item:hover { text-decoration: underline; }
 
 /* ============ Motion preferences ============ */
 @media (prefers-reduced-motion: reduce) {
+  /* honor the OS setting across the whole UI, not just the backdrop */
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
   .bg-grid, .bg-aurora, .bg-orb, .bg-mark, .bg-rays, .bg-shimmer,
   .brand .mark, .h-grad, .ticker-track { animation: none !important; }
+}
+
+/* dense markets table: tighten cells on small screens (it scrolls in .markets-wrap) */
+@media (max-width: 640px) {
+  .markets-table { font-size: 11px; }
+  .markets-table th { padding: 10px 12px; font-size: 9px; }
+  .markets-table td { padding: 10px 12px; }
 }
 
 /* ============================================================
