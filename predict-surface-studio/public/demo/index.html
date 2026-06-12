@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Predict Quant Suite · Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#040508" />
+<link rel="icon" href="/mark.svg" />
+<meta property="og:title" content="Predict Quant Suite · Demo" />
+<meta property="og:description" content="Demo walkthrough of Predict Quant Suite, built on DeepBook Predict for Sui Overflow 2026." />
+<meta property="og:image" content="https://predict.smartcodedbot.com/og.png" />
+<meta property="og:video" content="https://predict.smartcodedbot.com/demo/video.mp4" />
+<meta name="twitter:card" content="player" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+<style>
+  :root{--bg:#040508;--card:#0d0f15;--t1:#f4f6fa;--t2:#9aa4b4;--t3:#5c6474;--border:rgba(255,255,255,.08);
+    --blue:#4da2ff;--blue-l:#8ac4ff;--glow:rgba(77,162,255,.3);--beam:linear-gradient(120deg,#2b7fff,#4da2ff 48%,#22d3ee);
+    --sg:'Sora',system-ui,sans-serif;--inter:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--t1);font-family:var(--inter);-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 70% 45% at 50% -10%,rgba(77,162,255,.14),transparent 60%)}
+  .wrap{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:34px 18px 60px;width:100%}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .brand img{width:42px;height:42px;border-radius:12px;box-shadow:0 6px 20px var(--glow)}
+  h1{font-family:var(--sg);font-size:23px;font-weight:800;margin:0;letter-spacing:-.02em}
+  .sub{font-family:var(--mono);font-size:12px;color:var(--t2);margin:3px 0 0}
+  .stage{position:relative;border:1px solid var(--border);border-radius:18px;overflow:hidden;background:#06070b;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  video{display:block;width:100%;aspect-ratio:16/9;background:#000}
+  .placeholder{aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;
+    background:linear-gradient(135deg,rgba(43,127,255,.10),rgba(34,211,238,.05)),#06070b}
+  .placeholder .mk{width:64px;height:64px;border-radius:18px;background:var(--beam);box-shadow:0 10px 30px var(--glow);display:grid;place-items:center}
+  .placeholder .mk svg{width:42px;height:42px}
+  .placeholder h2{font-family:var(--sg);font-size:20px;margin:0}
+  .placeholder p{color:var(--t2);font-size:14px;max-width:440px;line-height:1.6;margin:0}
+  .links{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px}
+  .chip{font-family:var(--mono);font-size:12px;color:var(--blue-l);text-decoration:none;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 13px}
+  .chip:hover{border-color:var(--blue)}
+  footer{margin-top:auto;padding:18px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--t3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="/mark.svg" alt="" />
+    <div><h1>Predict Quant Suite — Demo</h1><div class="sub">DeepBook Predict · Sui Overflow 2026</div></div>
+  </div>
+
+  <div class="stage">
+    <video id="player" controls playsinline preload="metadata" poster="/og.png">
+      <source src="/demo/video.mp4" type="video/mp4" />
+    </video>
+    <div class="placeholder" id="ph" style="display:none">
+      <div class="mk">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M14 24 Q 32 47 50 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><circle cx="14" cy="24" r="3.6" fill="#fff"/><circle cx="32" cy="40" r="3.6" fill="#fff"/><circle cx="50" cy="24" r="3.6" fill="#fff"/></svg>
+      </div>
+      <h2>Demo video coming soon</h2>
+      <p>The walkthrough is being recorded. In the meantime, the product is fully live — explore it directly:</p>
+      <div class="links">
+        <a class="chip" href="https://predict.smartcodedbot.com" target="_blank" rel="noopener">Web terminal ↗</a>
+        <a class="chip" href="https://predict-api.smartcodedbot.com" target="_blank" rel="noopener">Keeper dashboard ↗</a>
+        <a class="chip" href="https://t.me/TheSmartPredictBot" target="_blank" rel="noopener">Telegram bot ↗</a>
+        <a class="chip" href="https://github.com/codedforum/predict-quant-suite" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+<footer>Built for Sui Overflow 2026 by SmartCodedBot</footer>
+
+<script>
+  // If the video file isn't uploaded yet, swap in the placeholder gracefully.
+  var v = document.getElementById('player');
+  v.addEventListener('error', showPlaceholder, true);
+  v.addEventListener('stalled', checkSoon);
+  function checkSoon(){ setTimeout(function(){ if (v.readyState === 0) showPlaceholder(); }, 2500); }
+  // also probe the file directly. The SPA fallback serves index.html (text/html)
+  // for a missing file with a 200, so require an actual video content-type.
+  fetch('/demo/video.mp4', { method: 'HEAD' }).then(function(r){
+    var ct = (r.headers.get('content-type') || '').toLowerCase();
+    if (!r.ok || ct.indexOf('video') === -1) showPlaceholder();
+  }).catch(showPlaceholder);
+  function showPlaceholder(){ v.style.display = 'none'; document.getElementById('ph').style.display = 'flex'; }
+</script>
+</body>
+</html>
