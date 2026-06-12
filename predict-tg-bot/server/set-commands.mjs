@@ -12,6 +12,7 @@ const commands = [
   { command: 'faucet', description: '💧 Get free testnet dUSDC and gas, one time' },
   { command: 'up', description: '📈 Bet BTC finishes above a strike' },
   { command: 'down', description: '📉 Bet BTC finishes below a strike' },
+  { command: 'range', description: '🎯 Bet BTC stays inside a band (spread)' },
   { command: 'positions', description: '📋 Your open positions' },
   { command: 'redeem', description: '💰 Redeem and cash out to your wallet' },
   { command: 'pnl', description: '📊 Your balance, equity and PnL' },

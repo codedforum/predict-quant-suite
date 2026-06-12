@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
 import { ensureUser, recordTrade, topUsers, openPositions } from './db.js';
-import { mintBinary, redeemAll, getManagerPnl } from './predict.js';
-import { faucetDusdc, ensurePredictManager, fetchLiveOracle, getUsdcBalance, getOrCreateKeypair, quoteStrike } from './sui.js';
+import { mintBinary, mintRange, redeemAll, getManagerPnl } from './predict.js';
+import { faucetDusdc, ensurePredictManager, fetchLiveOracle, getUsdcBalance, getOrCreateKeypair, quoteStrike, quoteRange } from './sui.js';
 
 const TOKEN = process.env.TG_TOKEN;
 const looksLikeRealToken = (t) => typeof t === 'string' && /^(\d{8,12}):([A-Za-z0-9_-]{30,40})$/.test(t.trim());
@@ -46,7 +46,7 @@ const SITE = 'https://predict.smartcodedbot.com';
 const webLink = (addr) => (addr ? `${SITE}/?addr=${addr}#volarb` : `${SITE}#volarb`);
 const homeKb = () => ({ inline_keyboard: [
   [{ text: '💧 Get testnet funds', callback_data: 'do_faucet' }],
-  [{ text: '📈 Trade Up', callback_data: 'do_up' }, { text: '📉 Trade Down', callback_data: 'do_down' }],
+  [{ text: '📈 Up', callback_data: 'do_up' }, { text: '📉 Down', callback_data: 'do_down' }, { text: '🎯 Range', callback_data: 'do_range' }],
   [{ text: '📊 My PnL', callback_data: 'do_pnl' }, { text: '📋 Positions', callback_data: 'do_pos' }],
   [{ text: '💹 Prices', callback_data: 'do_price' }, { text: '🏆 Leaderboard', callback_data: 'do_lb' }],
   [{ text: '🌐 Web terminal', url: SITE }],
@@ -57,8 +57,8 @@ const WELCOME = [
   '',
   '<b>How it works</b>',
   '<b>1.</b> <code>/faucet</code>  get free testnet dUSDC and gas, one time',
-  '<b>2.</b> <code>/up</code> or <code>/down</code>  open a BTC position in a few taps',
-  '<b>3.</b> <code>/pnl</code>  track your positions and profit',
+  '<b>2.</b> <code>/up</code> or <code>/down</code>  bet BTC above/below a strike',
+  '<b>3.</b> <code>/range</code>  bet BTC stays inside a band (structured product)',
   '<b>4.</b> <code>/redeem</code>  cash out settled payouts to your wallet',
   '',
   '🌐 <b>Web terminal:</b> the live 3D volatility surface and analytics for this exact market live at predict.smartcodedbot.com. Same on-chain oracle, you trade here and analyze there.',
@@ -71,12 +71,15 @@ const HELP = [
   'ℹ️ <b>Predict Quant Bot, full guide</b>',
   '',
   '<b>The market</b>',
-  'DeepBook Predict is an on-chain options market on Sui. Each market is a BTC binary: pick a strike and a direction, and you win if BTC finishes on your side at expiry. Pricing comes from a live on-chain oracle.',
+  'DeepBook Predict is an on-chain options market on Sui. Pricing comes from a live on-chain SVI volatility oracle. Two instruments:',
+  '• <b>Binary</b> (<code>/up</code>, <code>/down</code>): bet BTC finishes above or below a strike.',
+  '• <b>Range</b> (<code>/range</code>): a structured product, bet BTC finishes inside a band of two strikes. This composes the Predict primitive into a spread.',
   '',
   '<b>Commands</b>',
   '<code>/faucet</code>  one-time testnet funds, 3 dUSDC and gas',
   '<code>/up</code>  bet BTC finishes <b>above</b> a strike (CALL)',
   '<code>/down</code>  bet BTC finishes <b>below</b> a strike (PUT)',
+  '<code>/range</code>  bet BTC finishes <b>inside</b> a band (structured product)',
   '<code>/positions</code>  your open positions and time to expiry',
   '<code>/redeem</code>  settle and sweep payouts to your wallet',
   '<code>/pnl</code>  wallet balance, equity and realized PnL',
@@ -101,7 +104,7 @@ async function doFaucet(chatId, from) {
   if (r.already) return send(chatId, `✅ <b>Already claimed.</b>\nWallet balance: <b>${r.balance.toFixed(2)} dUSDC</b>\n\nReady to trade.`, homeKb());
   return send(chatId, [
     '💧 <b>Funded</b>',
-    'Sent <b>3 dUSDC</b> to trade and <b>0.03 SUI</b> for gas to your wallet.',
+    'Sent <b>3 dUSDC</b> to trade and <b>0.12 SUI</b> for gas to your wallet.',
     `Balance: <b>${r.balance.toFixed(2)} dUSDC</b>`,
     `<a href="${SUISCAN(r.digest)}">view transaction</a>`,
     '',
@@ -133,6 +136,32 @@ async function startTrade(chatId, from, direction) {
 bot.onText(/^\/up/, (msg) => safe(msg.chat.id, () => startTrade(msg.chat.id, msg.from, 'CALL')));
 bot.onText(/^\/down/, (msg) => safe(msg.chat.id, () => startTrade(msg.chat.id, msg.from, 'PUT')));
 
+// ── range / structured-product wizard ──
+// A range position pays out if BTC finishes BETWEEN two strikes at expiry: a
+// bounded "stays in this band" bet, i.e. a structured product composing Predict
+// with itself (predict::mint_range). Distinct from the binary up/down above.
+async function startRange(chatId, from) {
+  await ensureUser(from);
+  await send(chatId, '🎯 <i>Loading the live BTC market…</i>');
+  const o = await fetchLiveOracle();
+  wiz[from.id] = { kind: 'range', oracleId: o.oracleId, expiryMs: o.expiryMs, forward: o.forward };
+  const base = Math.round(o.forward / 250) * 250;
+  // mix of narrow-around-forward bands and offset bands, so some land in the mintable cost band
+  const cands = [[base - 250, base + 250], [base - 500, base + 500], [base + 500, base + 1500], [base - 1500, base - 500], [base + 1000, base + 2000], [base - 2000, base - 1000]];
+  const quoted = await Promise.all(cands.map(([lo, hi]) => quoteRange(o.oracleId, o.expiryMs, lo, hi).then((q) => ({ lo, hi, q }))));
+  let mintable = quoted.filter((x) => x.q && x.q.cost > 0.04 && x.q.cost < 0.96);
+  if (!mintable.length) return send(chatId, '⚠️ <b>No range markets openable right now</b> (too close to expiry). Please try again shortly.', homeKb());
+  if (mintable.length > 4) mintable = mintable.slice(0, 4);
+  const rows = mintable.map((x) => ([{ text: `$${(x.lo / 1000).toFixed(1)}k – $${(x.hi / 1000).toFixed(1)}k  ·  pays ${(1 / x.q.cost).toFixed(1)}x`, callback_data: `w_range:${x.lo}:${x.hi}` }]));
+  await send(chatId, [
+    '🎯 <b>Range bet</b> (structured product) on <b>BTC</b>',
+    `Forward <b>${fmtUsd(o.forward)}</b>, settles in <b>${expiryIn(o.expiryMs)}</b>`,
+    '',
+    'You win if BTC finishes <b>inside</b> the band at expiry. Tighter or offset bands pay more. Pick a band.',
+  ].join('\n'), { inline_keyboard: rows });
+}
+bot.onText(/^\/range/, (msg) => safe(msg.chat.id, () => startRange(msg.chat.id, msg.from)));
+
 // ── /pnl /positions /redeem /price /leaderboard ──
 async function doPnl(chatId, from) {
   const user = await ensureUser(from);
@@ -154,8 +183,10 @@ async function doPositions(chatId, from) {
   const user = await ensureUser(from);
   const addr = getOrCreateKeypair(user).toSuiAddress();
   const pos = openPositions(user.tgId);
-  if (!pos.length) return send(chatId, '📋 <b>No open positions.</b>\nOpen one with 📈 Trade Up or 📉 Trade Down.', homeKb());
-  const lines = pos.map((p) => `${p.isUp ? '📈 CALL' : '📉 PUT'}  <b>$${(p.strike / 1e9 / 1000).toFixed(0)}k</b>  ·  cost <b>${(p.cost / 1e6).toFixed(2)}</b> dUSDC  ·  settles in <b>${expiryIn(p.expiry)}</b>`);
+  if (!pos.length) return send(chatId, '📋 <b>No open positions.</b>\nOpen one with 📈 Up, 📉 Down or 🎯 Range.', homeKb());
+  const lines = pos.map((p) => p.kind === 'range'
+    ? `🎯 RANGE  <b>$${(p.lowerStrike / 1e9 / 1000).toFixed(1)}k–$${(p.higherStrike / 1e9 / 1000).toFixed(1)}k</b>  ·  cost <b>${(p.cost / 1e6).toFixed(2)}</b> dUSDC  ·  settles in <b>${expiryIn(p.expiry)}</b>`
+    : `${p.isUp ? '📈 CALL' : '📉 PUT'}  <b>$${(p.strike / 1e9 / 1000).toFixed(0)}k</b>  ·  cost <b>${(p.cost / 1e6).toFixed(2)}</b> dUSDC  ·  settles in <b>${expiryIn(p.expiry)}</b>`);
   await send(chatId, `📋 <b>Open positions (${pos.length})</b>\n${lines.join('\n')}`, { inline_keyboard: [
     [{ text: '💰 Redeem settled', callback_data: 'do_redeem' }],
     [{ text: '🌐 View on web terminal', url: webLink(addr) }],
@@ -218,6 +249,7 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
   if (data === 'do_faucet') return doFaucet(chatId, q.from);
   if (data === 'do_up') return startTrade(chatId, q.from, 'CALL');
   if (data === 'do_down') return startTrade(chatId, q.from, 'PUT');
+  if (data === 'do_range') return startRange(chatId, q.from);
   if (data === 'do_pnl') return doPnl(chatId, q.from);
   if (data === 'do_pos') return doPositions(chatId, q.from);
   if (data === 'do_redeem') return doRedeem(chatId, q.from);
@@ -234,40 +266,54 @@ bot.on('callback_query', (q) => safe(q.message.chat.id, async () => {
     w.strike = strike;
     return send(chatId, `Strike <b>$${(w.strike / 1000).toFixed(0)}k</b> selected.\nHow much dUSDC to commit?`, { inline_keyboard: [[1, 2, 3].map((s) => ({ text: `${s} dUSDC`, callback_data: `w_size:${s}` }))] });
   }
+  if (data.startsWith('w_range:')) {
+    if (!w) return send(chatId, 'Trade expired, start again with /range.');
+    const [, loS, hiS] = data.split(':');
+    const lo = parseInt(loS, 10), hi = parseInt(hiS, 10);
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo <= 0 || hi <= lo || hi > 100_000_000) return send(chatId, 'Invalid band, start again with /range.', homeKb());
+    w.lower = lo; w.higher = hi;
+    return send(chatId, `Band <b>$${(lo / 1000).toFixed(1)}k – $${(hi / 1000).toFixed(1)}k</b> selected.\nHow much dUSDC to commit?`, { inline_keyboard: [[1, 2, 3].map((s) => ({ text: `${s} dUSDC`, callback_data: `w_size:${s}` }))] });
+  }
   if (data.startsWith('w_size:')) {
-    if (!w || !w.strike) return send(chatId, 'Trade expired, start again with /up or /down.');
+    if (!w || (!w.strike && !w.lower)) return send(chatId, 'Trade expired, start again with /up, /down or /range.');
     const size = parseInt(data.split(':')[1], 10);
     if (![1, 2, 3].includes(size)) return send(chatId, 'Please pick a size of 1, 2 or 3 dUSDC.', homeKb());
     w.size = size;
+    const head = w.kind === 'range'
+      ? ['<b>Confirm your range bet</b>', '🎯 BTC finishes <b>inside</b> the band', `Band: <b>$${(w.lower / 1000).toFixed(1)}k – $${(w.higher / 1000).toFixed(1)}k</b>`]
+      : ['<b>Confirm your trade</b>', `${w.direction === 'CALL' ? '📈 CALL (up)' : '📉 PUT (down)'} BTC`, `Strike: <b>$${(w.strike / 1000).toFixed(0)}k</b>`];
     return send(chatId, [
-      '<b>Confirm your trade</b>',
-      `${w.direction === 'CALL' ? '📈 CALL (up)' : '📉 PUT (down)'} BTC`,
-      `Strike: <b>$${(w.strike / 1000).toFixed(0)}k</b>`,
+      ...head,
       `Size: <b>${w.size} dUSDC</b>`,
       `Settles in: <b>${expiryIn(w.expiryMs)}</b>`,
     ].join('\n'), { inline_keyboard: [[{ text: '✅ Confirm', callback_data: 'w_go' }, { text: '✖ Cancel', callback_data: 'w_cancel' }]] });
   }
   if (data === 'w_cancel') { delete wiz[q.from.id]; return send(chatId, 'Cancelled.', homeKb()); }
   if (data === 'w_go') {
-    if (!w || !w.strike || !w.size) return send(chatId, 'Trade expired, start again with /up or /down.');
+    if (!w || !w.size || (!w.strike && !w.lower)) return send(chatId, 'Trade expired, start again with /up, /down or /range.');
     const user = await ensureUser(q.from);
     const addr = getOrCreateKeypair(user).toSuiAddress();
     const bal = await getUsdcBalance(addr);
     if (bal < w.size) return send(chatId, `You need <b>${w.size} dUSDC</b> but have <b>${bal.toFixed(2)}</b>. Tap 💧 Get testnet funds first.`, homeKb());
     await send(chatId, '⏳ <i>Opening your position on-chain…</i>');
     await ensurePredictManager(user);
+    const isRange = w.kind === 'range';
     let tx;
     try {
-      tx = await mintBinary({ user, direction: w.direction, oracleId: w.oracleId, strike: w.strike, expiryMs: w.expiryMs, quantity: w.size * 1_000_000, depositUsdc: w.size });
+      tx = isRange
+        ? await mintRange({ user, oracleId: w.oracleId, lowerStrike: w.lower, higherStrike: w.higher, expiryMs: w.expiryMs, quantity: w.size * 1_000_000, depositUsdc: w.size })
+        : await mintBinary({ user, direction: w.direction, oracleId: w.oracleId, strike: w.strike, expiryMs: w.expiryMs, quantity: w.size * 1_000_000, depositUsdc: w.size });
     } catch (e) {
       console.error('[mint]', e?.message);
-      return send(chatId, '⚠️ <b>Could not open the position.</b> The market may have moved or is near expiry. Please try /up or /down again.', homeKb());
+      return send(chatId, '⚠️ <b>Could not open the position.</b> The market may have moved or is near expiry. Please try again.', homeKb());
     }
-    recordTrade({ tgId: user.tgId, direction: w.direction, strike: w.strike, sizeUsdc: w.size, txDigest: tx.digest });
+    if (!isRange) recordTrade({ tgId: user.tgId, direction: w.direction, strike: w.strike, sizeUsdc: w.size, txDigest: tx.digest });
     delete wiz[q.from.id];
     return send(chatId, [
       '✅ <b>Position opened</b>',
-      `${w.direction === 'CALL' ? '📈 CALL' : '📉 PUT'} BTC <b>$${(w.strike / 1000).toFixed(0)}k</b> for <b>${w.size} dUSDC</b>`,
+      isRange
+        ? `🎯 RANGE BTC <b>$${(w.lower / 1000).toFixed(1)}k–$${(w.higher / 1000).toFixed(1)}k</b> for <b>${w.size} dUSDC</b>`
+        : `${w.direction === 'CALL' ? '📈 CALL' : '📉 PUT'} BTC <b>$${(w.strike / 1000).toFixed(0)}k</b> for <b>${w.size} dUSDC</b>`,
       `<a href="${SUISCAN(tx.digest)}">view on-chain</a>`,
     ].join('\n'), { inline_keyboard: [
       [{ text: '📊 My PnL', callback_data: 'do_pnl' }, { text: '📈 Trade again', callback_data: 'do_up' }],

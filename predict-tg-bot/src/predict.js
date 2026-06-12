@@ -77,6 +77,71 @@ export async function mintBinary({ user, direction, oracleId, strike, expiryMs, 
   return { digest: r.digest, position: pos };
 }
 
+// Mint a vertical-RANGE (bounded) position: pays out if the price lands BETWEEN
+// lowerStrike and higherStrike at expiry. This is a structured product / spread,
+// composing the Predict primitive with itself (predict::mint_range + range_key).
+export async function mintRange({ user, oracleId, lowerStrike, higherStrike, expiryMs, quantity, depositUsdc }) {
+  const kp = getOrCreateKeypair(user);
+  const managerId = loadPredictManagerId(user.tgId);
+  if (!managerId) throw new Error('manager missing - call ensurePredictManager first');
+  if (!PREDICT_OBJECT) throw new Error('PREDICT_OBJECT env var not set');
+
+  const tx = new Transaction();
+  if (depositUsdc && depositUsdc > 0) {
+    const depositRaw = BigInt(Math.floor(depositUsdc * 1_000_000));
+    const coins = await suiClient.getCoins({ owner: kp.toSuiAddress(), coinType: DUSDC_TYPE });
+    if (!coins.data.length) throw new Error('no dUSDC balance to deposit - fund the wallet first');
+    const primary = coins.data[0].coinObjectId;
+    if (coins.data.length > 1) tx.mergeCoins(tx.object(primary), coins.data.slice(1).map((c) => tx.object(c.coinObjectId)));
+    const [topUp] = tx.splitCoins(tx.object(primary), [tx.pure.u64(depositRaw)]);
+    tx.moveCall({ target: `${PREDICT_PKG}::predict_manager::deposit`, arguments: [tx.object(managerId), topUp], typeArguments: [DUSDC_TYPE] });
+  }
+
+  const key = tx.moveCall({
+    target: `${PREDICT_PKG}::range_key::new`,
+    arguments: [tx.pure.id(oracleId), tx.pure.u64(BigInt(expiryMs)), tx.pure.u64(BigInt(Math.floor(lowerStrike * 1e9))), tx.pure.u64(BigInt(Math.floor(higherStrike * 1e9)))],
+  });
+  tx.moveCall({
+    target: `${PREDICT_PKG}::predict::mint_range`,
+    arguments: [tx.object(PREDICT_OBJECT), tx.object(managerId), tx.object(oracleId), key, tx.pure.u64(BigInt(quantity)), tx.object('0x6')],
+    typeArguments: [DUSDC_TYPE],
+  });
+
+  const r = await suiClient.signAndExecuteTransaction({ signer: kp, transaction: tx, options: { showEffects: true, showEvents: true } });
+  if (r.effects?.status?.status !== 'success') throw new Error('mint_range failed: ' + JSON.stringify(r.effects?.status));
+  const ev = (r.events || []).find((e) => String(e.type).endsWith('::predict::RangeMinted'));
+  const pos = ev?.parsedJson;
+  recordPosition({
+    tgId: user.tgId, kind: 'range', oracleId,
+    expiry: pos?.expiry ?? expiryMs,
+    lowerStrike: pos?.lower_strike ?? Math.floor(lowerStrike * 1e9),
+    higherStrike: pos?.higher_strike ?? Math.floor(higherStrike * 1e9),
+    quantity: pos?.quantity ?? quantity, cost: pos?.cost ?? 0, tx: r.digest,
+  });
+  return { digest: r.digest, position: pos };
+}
+
+// Redeem a single range position (range_key + predict::redeem_range).
+async function redeemRangeOne({ user, oracleId, expiry, lowerStrike, higherStrike, quantity }) {
+  const kp = getOrCreateKeypair(user);
+  const managerId = loadPredictManagerId(user.tgId);
+  const tx = new Transaction();
+  const key = tx.moveCall({
+    target: `${PREDICT_PKG}::range_key::new`,
+    arguments: [tx.pure.id(oracleId), tx.pure.u64(BigInt(expiry)), tx.pure.u64(BigInt(lowerStrike)), tx.pure.u64(BigInt(higherStrike))],
+  });
+  tx.moveCall({
+    target: `${PREDICT_PKG}::predict::redeem_range`,
+    arguments: [tx.object(PREDICT_OBJECT), tx.object(managerId), tx.object(oracleId), key, tx.pure.u64(BigInt(quantity)), tx.object('0x6')],
+    typeArguments: [DUSDC_TYPE],
+  });
+  const r = await suiClient.signAndExecuteTransaction({ signer: kp, transaction: tx, options: { showEffects: true, showEvents: true } });
+  const ev = (r.events || []).find((e) => String(e.type).endsWith('::predict::RangeRedeemed'));
+  const bid = Number(ev?.parsedJson?.bid_price ?? 0);          // per-contract bid, 1e9 scale
+  const payout = (bid / 1e9) * (Number(quantity) / 1_000_000);
+  return { digest: r.digest, payout };
+}
+
 // Redeem one position. Predict has no batch redeem - we walk our DB.
 export async function redeemOne({ user, oracleId, expiry, strike, isUp, quantity }) {
   const kp = getOrCreateKeypair(user);
@@ -166,15 +231,10 @@ export async function redeemAll(user) {
   let failures = 0;
   for (const p of positions) {
     try {
-      const r = await redeemOne({
-        user,
-        oracleId: p.oracleId,
-        expiry: p.expiry,
-        strike: p.strike,
-        isUp: !!p.isUp,
-        quantity: p.quantity,
-      });
-      // r.payout is already in dUSDC (divided by 1e6 in redeemOne)
+      const r = p.kind === 'range'
+        ? await redeemRangeOne({ user, oracleId: p.oracleId, expiry: p.expiry, lowerStrike: p.lowerStrike, higherStrike: p.higherStrike, quantity: p.quantity })
+        : await redeemOne({ user, oracleId: p.oracleId, expiry: p.expiry, strike: p.strike, isUp: !!p.isUp, quantity: p.quantity });
+      // r.payout is already in dUSDC
       const payoutRaw = Math.round((r.payout || 0) * 1_000_000);
       markRedeemed(p.id, payoutRaw);
       payout += r.payout || 0;

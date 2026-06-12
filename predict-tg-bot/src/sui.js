@@ -14,7 +14,7 @@ export const suiClient = new SuiClient({ url: RPC });
 
 const FAUCET_KEY = process.env.FAUCET_KEY || '';
 const PREDICT_API = process.env.PREDICT_API || 'https://predict-api.smartcodedbot.com';
-const FAUCET_SUI = 30_000_000n;   // 0.03 SUI for gas
+const FAUCET_SUI = 120_000_000n;  // 0.12 SUI for gas (manager + binary/range mint + redeem; storage is largely rebated on redeem)
 const FAUCET_USDC = 3_000_000n;   // 3 dUSDC to trade with
 function treasuryKeypair() {
   if (!FAUCET_KEY) throw new Error('FAUCET_KEY not set');
@@ -44,6 +44,22 @@ export async function quoteStrike(oracleId, expiryMs, strike, direction) {
   const tx = new Transaction();
   const key = tx.moveCall({ target: `${PREDICT_PKG}::market_key::${direction === 'CALL' ? 'up' : 'down'}`, arguments: [tx.pure.id(oracleId), tx.pure.u64(BigInt(expiryMs)), tx.pure.u64(BigInt(Math.floor(strike * 1e9)))] });
   tx.moveCall({ target: `${PREDICT_PKG}::predict::get_trade_amounts`, arguments: [tx.object(PREDICT_OBJECT), tx.object(oracleId), key, tx.pure.u64(1_000_000n), tx.object('0x6')] });
+  try {
+    const r = await suiClient.devInspectTransactionBlock({ sender: treAddr(), transactionBlock: tx });
+    if (r.error) return null;
+    const rv = r.results?.[r.results.length - 1]?.returnValues;
+    if (!rv || rv.length < 2) return null;
+    return { cost: Number(u64le(rv[0][0])) / 1e6, payout: Number(u64le(rv[1][0])) / 1e6 };
+  } catch { return null; }
+}
+
+// Quote a vertical-range (bounded) position via get_range_trade_amounts (devInspect).
+// A range pays out if the price lands BETWEEN lowerStrike and higherStrike at expiry,
+// i.e. a structured product / spread, composing the Predict primitive with itself.
+export async function quoteRange(oracleId, expiryMs, lowerStrike, higherStrike, quantity = 1_000_000n) {
+  const tx = new Transaction();
+  const key = tx.moveCall({ target: `${PREDICT_PKG}::range_key::new`, arguments: [tx.pure.id(oracleId), tx.pure.u64(BigInt(expiryMs)), tx.pure.u64(BigInt(Math.floor(lowerStrike * 1e9))), tx.pure.u64(BigInt(Math.floor(higherStrike * 1e9)))] });
+  tx.moveCall({ target: `${PREDICT_PKG}::predict::get_range_trade_amounts`, arguments: [tx.object(PREDICT_OBJECT), tx.object(oracleId), key, tx.pure.u64(BigInt(quantity)), tx.object('0x6')] });
   try {
     const r = await suiClient.devInspectTransactionBlock({ sender: treAddr(), transactionBlock: tx });
     if (r.error) return null;
@@ -115,5 +131,5 @@ export async function faucetDusdc(user) {
   try { await suiClient.waitForTransaction({ digest: r.digest, timeout: 8000 }); } catch (e) { /* balance fallback below */ }
   let balance = await getUsdcBalance(addr);
   if (balance < 3) balance = Number(FAUCET_USDC) / 1e6;   // index lag fallback: we just sent 3
-  return { digest: r.digest, balance, address: addr, sui: '0.03', usdc: '3' };
+  return { digest: r.digest, balance, address: addr, sui: '0.12', usdc: '3' };
 }

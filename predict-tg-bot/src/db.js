@@ -40,6 +40,10 @@ CREATE INDEX IF NOT EXISTS idx_trades_user ON trades(tg_id, created_at);
 
 // migration: one-time faucet claim flag (safe to re-run)
 try { db.exec(`ALTER TABLE users ADD COLUMN faucet_claimed INTEGER DEFAULT 0`); } catch (e) { /* column exists */ }
+// migration: vertical-range / structured-product positions (safe to re-run)
+try { db.exec(`ALTER TABLE positions ADD COLUMN kind TEXT DEFAULT 'binary'`); } catch (e) { /* exists */ }
+try { db.exec(`ALTER TABLE positions ADD COLUMN lower_strike INTEGER`); } catch (e) { /* exists */ }
+try { db.exec(`ALTER TABLE positions ADD COLUMN higher_strike INTEGER`); } catch (e) { /* exists */ }
 
 export function hasFauceted(tgId) { return Boolean(db.prepare('SELECT faucet_claimed FROM users WHERE tg_id = ?').get(tgId)?.faucet_claimed); }
 export function markFauceted(tgId) { db.prepare('UPDATE users SET faucet_claimed = 1 WHERE tg_id = ?').run(tgId); }
@@ -73,15 +77,16 @@ export function loadKey(tgId) { return db.prepare('SELECT enc_key FROM users WHE
 export function savePredictManagerId(tgId, mid) { db.prepare('UPDATE users SET manager_id = ? WHERE tg_id = ?').run(mid, tgId); }
 export function loadPredictManagerId(tgId) { return db.prepare('SELECT manager_id FROM users WHERE tg_id = ?').get(tgId)?.manager_id; }
 
-export function recordPosition({ tgId, oracleId, expiry, strike, isUp, quantity, cost, tx }) {
-  db.prepare(`INSERT INTO positions (tg_id, oracle_id, expiry, strike, is_up, quantity, cost, tx, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-    tgId, oracleId, expiry, strike, isUp ? 1 : 0, quantity, cost, tx, Date.now()
+export function recordPosition({ tgId, oracleId, expiry, strike, isUp, quantity, cost, tx, kind = 'binary', lowerStrike = null, higherStrike = null }) {
+  db.prepare(`INSERT INTO positions (tg_id, oracle_id, expiry, strike, is_up, quantity, cost, tx, kind, lower_strike, higher_strike, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    tgId, oracleId, expiry, strike || 0, isUp ? 1 : 0, quantity, cost, tx, kind, lowerStrike, higherStrike, Date.now()
   );
 }
 
 export function openPositions(tgId) {
-  return db.prepare(`SELECT id, oracle_id AS oracleId, expiry, strike, is_up AS isUp, quantity, cost
+  return db.prepare(`SELECT id, oracle_id AS oracleId, expiry, strike, is_up AS isUp, quantity, cost,
+                       kind, lower_strike AS lowerStrike, higher_strike AS higherStrike
                      FROM positions WHERE tg_id = ? AND status = 'open'`).all(tgId);
 }
 
