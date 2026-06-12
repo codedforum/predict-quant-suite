@@ -419,7 +419,7 @@ function TabPanel({ tab, oracles, current, idx, setIdx, error, onDrillOracle, su
       { id: 'sec-tg', label: 'Telegram' },
     ];
     return (
-      <div className="tab-panel two-col" style={{ gridTemplateColumns: '1fr 200px' }}>
+      <div className="tab-panel volarb-grid">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <section className="card glow surface-hero">
             <div className="card-head">

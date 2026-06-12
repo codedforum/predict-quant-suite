@@ -1303,6 +1303,10 @@ a.cb-item:hover { text-decoration: underline; }
   box-shadow: var(--shadow-1);
 }
 @media (min-width: 1100px) { .spy-nav { display: flex; } }
+/* vol-arb tab: single column until the spy-nav sidebar appears at 1100px,
+   so phones/tablets get full-width content with no empty 200px gutter */
+.volarb-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+@media (min-width: 1100px) { .volarb-grid { grid-template-columns: 1fr 200px; } }
 .spy-link {
   display: flex; align-items: center; gap: 8px;
   padding: 7px 10px; border-radius: 7px;
